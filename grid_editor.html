@@ -217,6 +217,7 @@
                 const d = document.createElement('div');
                 d.className = 'sw' + (i === selColor ? ' sel' : '');
                 d.style.background = rgba(c);
+                d.title = c;
                 d.onclick = () => { selColor = i; renderPalette(); };
                 el.appendChild(d);
             });

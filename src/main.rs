@@ -1,8 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet},
-    f32::consts::PI,
-    fs,
-};
+use std::{collections::HashMap, f32::consts::PI, fs};
 
 use bevy::prelude::*;
 use serde::Deserialize;
@@ -32,32 +28,33 @@ fn main() {
 }
 
 fn init_map_n_countries(mut commands: Commands, mut map: ResMut<Map>) {
-    let (hexagons, colors) = world_from_json();
+    let (hexagons, countries) = world_from_json();
 
-    let mut countries_colors = HashMap::new();
+    let mut countries_id = HashMap::new();
 
-    for (i, color) in colors.into_iter().enumerate() {
+    for (color, name) in countries.into_iter() {
         let entity = {
-            commands
-                .spawn(Country {
-                    name: format!("{i}"),
-                    color: Color::linear_rgb(
-                        color[0] as f32 / 255.,
-                        color[1] as f32 / 255.,
-                        color[2] as f32 / 255.,
-                    ),
-                })
-                .id()
+            let color = Color::linear_rgb(
+                color[0] as f32 / 255.,
+                color[1] as f32 / 255.,
+                color[2] as f32 / 255.,
+            );
+
+            commands.spawn(Country { name, color }).id()
         };
 
-        countries_colors.insert(color, entity);
+        countries_id.insert(color, entity);
     }
 
     for (pos, color) in hexagons {
+        let Some(&control) = countries_id.get(&color) else {
+            panic!("{color:?}")
+        };
+
         map.provinces.insert(
             pos,
             Province {
-                control: Some(countries_colors[&color]),
+                control: Some(control),
             },
         );
     }
@@ -78,8 +75,8 @@ fn setup_provinces_meshes(
 
     let mesh = meshes.add(RegularPolygon::new(SIDE, 6));
 
-    for (&pos, province) in &map.provinces {
-        let pos = pos.real() * SIDE;
+    for (&hpos, province) in &map.provinces {
+        let pos = hpos.real_regular(SIDE);
         let country = province.control.unwrap();
         let country = countries.get(country).unwrap();
         let color = country.color;
@@ -89,6 +86,21 @@ fn setup_provinces_meshes(
             MeshMaterial2d(materials.add(color)),
             Transform::from_xyz(pos.x, pos.y, 0.0).with_rotation(Quat::from_rotation_z(PI / 2.)),
         ));
+
+        for (neighbour, side) in hpos.neighbours().into_iter().zip(hpos.sides_regular(SIDE)) {
+            let border = map
+                .provinces
+                .get(&neighbour)
+                .is_some_and(|neighbour| neighbour.control != province.control);
+
+            if border {
+                commands.spawn((
+                    Mesh2d(meshes.add(Segment2d::new(side.0, side.1))),
+                    MeshMaterial2d(materials.add(Color::WHITE)),
+                    Transform::from_xyz(0., 0., 0.0),
+                ));
+            }
+        }
     }
 }
 
@@ -162,16 +174,21 @@ fn camera_zoom(
     transform.translation.y = new_cam.y;
 }
 
-fn world_from_json() -> (HashMap<HexagonPos, [u8; 4]>, HashSet<[u8; 4]>) {
+fn world_from_json() -> (HashMap<HexagonPos, [u8; 4]>, HashMap<[u8; 4], String>) {
     #[derive(Deserialize)]
     struct Data {
         hexagons: HashMap<String, [u8; 4]>,
+        countries: HashMap<String, [u8; 4]>,
     }
 
     let data = fs::read_to_string("countries.json").unwrap();
     let data: Data = serde_json::from_str(&data).unwrap();
 
-    let mut colors = HashSet::new();
+    let countries: HashMap<[u8; 4], String> = data
+        .countries
+        .into_iter()
+        .map(|(name, color)| (color, name))
+        .collect();
 
     println!("loaded {} provinces", data.hexagons.len());
 
@@ -183,13 +200,11 @@ fn world_from_json() -> (HashMap<HexagonPos, [u8; 4]>, HashSet<[u8; 4]>) {
             let x = x.parse().unwrap();
             let y: i32 = y.parse().unwrap();
 
-            colors.insert(color);
-
             (HexagonPos::new(x, -y), color)
         })
         .collect();
 
-    println!("loaded {} countries", colors.len());
+    println!("loaded {} countries", countries.len());
 
-    (hexagons, colors)
+    (hexagons, countries)
 }
