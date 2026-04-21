@@ -4,13 +4,19 @@ use bevy::prelude::*;
 use serde::Deserialize;
 
 use crate::{
-    country::Country,
+    country::{Country, PlayingCountry},
+    economy::gain_money,
     hexagon_pos::HexagonPos,
+    interface::{dispaly_country_info, update_country_info},
+    tick::{Tick, run_tick, setup_ticks},
     world::{Map, Province},
 };
 
 pub mod country;
+pub mod economy;
 pub mod hexagon_pos;
+pub mod interface;
+pub mod tick;
 pub mod world;
 
 const SIDE: f32 = 5.;
@@ -20,11 +26,32 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_systems(
             Startup,
-            (init_map_n_countries, setup_provinces_meshes).chain(),
+            (
+                (
+                    init_map_n_countries,
+                    setup_provinces_meshes,
+                    setup_playing_country,
+                    dispaly_country_info,
+                )
+                    .chain(),
+                setup_ticks,
+            ),
         )
+        .add_systems(Update, run_tick)
         .add_systems(FixedUpdate, (camera_zoom, camera_controls))
+        .add_systems(Tick, (gain_money, update_country_info))
         .insert_resource(Map::default())
         .run();
+}
+
+fn setup_playing_country(mut commands: Commands, countries: Query<(&Country, Entity)>) {
+    for (country, id) in countries {
+        if &country.name == "Germany" {
+            commands.entity(id).insert(PlayingCountry);
+            println!("playing country is Germany");
+            break;
+        }
+    }
 }
 
 fn init_map_n_countries(mut commands: Commands, mut map: ResMut<Map>) {
@@ -40,7 +67,13 @@ fn init_map_n_countries(mut commands: Commands, mut map: ResMut<Map>) {
                 color[2] as f32 / 255.,
             );
 
-            commands.spawn(Country { name, color }).id()
+            commands
+                .spawn(Country {
+                    name,
+                    color,
+                    money: 0,
+                })
+                .id()
         };
 
         countries_id.insert(color, entity);
