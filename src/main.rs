@@ -4,20 +4,16 @@ use bevy::prelude::*;
 use serde::Deserialize;
 
 use crate::{
-    country::{Country, PlayingCountry},
-    economy::gain_money,
+    components::{Country, Map, PlayingCountry, Province},
     hexagon_pos::HexagonPos,
-    interface::{dispaly_country_info, update_country_info},
+    systems::{dispaly_country_info, gain_money, update_country_info},
     tick::{Tick, run_tick, setup_ticks},
-    world::{Map, Province},
 };
 
-pub mod country;
-pub mod economy;
+pub mod components;
 pub mod hexagon_pos;
-pub mod interface;
+pub mod systems;
 pub mod tick;
-pub mod world;
 
 const SIDE: f32 = 5.;
 

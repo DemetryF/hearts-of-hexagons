@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::country::{Country, PlayingCountry};
+use crate::components::{Country, PlayingCountry};
 
 const BACKGROUND_COLOR: Color = Color::linear_rgba(0.4, 0.4, 0.4, 0.5);
 

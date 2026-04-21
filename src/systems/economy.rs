@@ -1,4 +1,4 @@
-use crate::{country::Country, world::Map};
+use crate::components::{Country, Map};
 use bevy::prelude::*;
 
 pub fn gain_money(map: Res<Map>, mut countries: Query<&mut Country>) {
