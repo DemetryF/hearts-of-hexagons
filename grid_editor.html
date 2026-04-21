@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Hex Editor</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: sans-serif;
+            background: #222;
+            color: #eee;
+            overflow: hidden
+        }
+
+        #ui {
+            position: fixed;
+            top: 8px;
+            left: 8px;
+            background: #333a;
+            padding: 8px;
+            border-radius: 6px;
+            z-index: 10
+        }
+
+        #ui input,
+        #ui button {
+            margin: 2px
+        }
+
+        #palette {
+            display: flex;
+            flex-wrap: wrap;
+            max-width: 220px;
+            margin-top: 6px
+        }
+
+        .sw {
+            width: 24px;
+            height: 24px;
+            margin: 2px;
+            border: 2px solid #555;
+            cursor: pointer
+        }
+
+        .sw.sel {
+            border-color: #fff
+        }
+
+        canvas {
+            display: block;
+            cursor: crosshair
+        }
+    </style>
+</head>
+
+<body>
+    <div id="ui">
+        size:<input id="size" type="number" value="24" min="6" style="width:50px">
+        <button onclick="exportJSON()">Export</button>
+        <button onclick="document.getElementById('imp').click()">Import</button>
+        <input id="imp" type="file" accept=".json" style="display:none">
+        <br>
+        <input id="picker" type="color" value="#ff0000">
+        <input id="alpha" type="range" min="0" max="255" value="255" style="width:80px">
+        <button onclick="addColor()">+</button>
+        <button onclick="delColor()">−</button>
+        <button onclick="clearGrid()">Clear</button>
+        <button id="eyeBtn" onclick="toggleEye()">Пипетка</button>
+        <div id="palette"></div>
+        <small>ЛКМ — красить, ПКМ — стереть, колесо — зум, средняя/пробел+перетаск — панорама</small>
+    </div>
+    <canvas id="c"></canvas>
+    <script>
+        const canvas = document.getElementById('c'), ctx = canvas.getContext('2d');
+        let W, H; function resize() { W = canvas.width = innerWidth; H = canvas.height = innerHeight; draw(); }
+        addEventListener('resize', resize);
+
+        let state = { hexagons: {}, colors: [[255, 0, 0, 255], [0, 255, 0, 255], [0, 100, 255, 255], [255, 255, 0, 255]] };
+        let selColor = 0;
+        let view = { x: 0, y: 0, scale: 1 };
+        let size = 24;
+
+        document.getElementById('size').oninput = e => { size = +e.target.value || 24; draw(); };
+
+        function hexSize() { return size; }
+        // flat-top, odd-q offset
+        function hexToPixel(cx, cy) {
+            const s = hexSize();
+            const x = s * 1.5 * cx;
+            const y = s * Math.sqrt(3) * (cy + 0.5 * (cx & 1 ? 1 : 0));
+            return [x, y];
+        }
+        function pixelToHex(px, py) {
+            const s = hexSize();
+            // approximate: search nearest among candidates
+            const approxCol = px / (s * 1.5);
+            const col = Math.round(approxCol);
+            const candidates = [];
+            for (let dc = -1; dc <= 1; dc++) {
+                const c = col + dc;
+                const rowApprox = py / (s * Math.sqrt(3)) - 0.5 * (c & 1 ? 1 : 0);
+                for (let dr = -1; dr <= 1; dr++) {
+                    candidates.push([c, Math.round(rowApprox) + dr]);
+                }
+            }
+            let best = null, bd = Infinity;
+            for (const [c, r] of candidates) {
+                const [hx, hy] = hexToPixel(c, r);
+                const d = (hx - px) ** 2 + (hy - py) ** 2;
+                if (d < bd) { bd = d; best = [c, r]; }
+            }
+            return best;
+        }
+
+        function rgba(c) { return `rgba(${c[0]},${c[1]},${c[2]},${c[3] / 255})`; }
+
+        function drawHex(cx, cy, fill) {
+            const [px, py] = hexToPixel(cx, cy);
+            const s = hexSize();
+            ctx.beginPath();
+            for (let i = 0; i < 6; i++) {
+                const a = Math.PI / 3 * i;
+                const x = px + s * Math.cos(a), y = py + s * Math.sin(a);
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            if (fill) { ctx.fillStyle = rgba(fill); ctx.fill(); }
+            ctx.strokeStyle = '#555'; ctx.lineWidth = 1; ctx.stroke();
+        }
+
+        function draw() {
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.fillStyle = '#1a1a1a'; ctx.fillRect(0, 0, W, H);
+            ctx.setTransform(view.scale, 0, 0, view.scale, W / 2 + view.x, H / 2 + view.y);
+
+            const s = hexSize();
+            // visible range
+            const inv = 1 / view.scale;
+            const left = (-W / 2 - view.x) * inv, right = (W / 2 - view.x) * inv;
+            const top = (-H / 2 - view.y) * inv, bot = (H / 2 - view.y) * inv;
+            const pad = s * 2;
+            const cMin = Math.floor((left - pad) / (s * 1.5)), cMax = Math.ceil((right + pad) / (s * 1.5));
+            const rMin = Math.floor((top - pad) / (s * Math.sqrt(3))) - 1, rMax = Math.ceil((bot + pad) / (s * Math.sqrt(3))) + 1;
+
+            for (let c = cMin; c <= cMax; c++) {
+                for (let r = rMin; r <= rMax; r++) {
+                    const k = c + ',' + r;
+                    drawHex(c, r, state.hexagons[k]);
+                }
+            }
+        }
+
+        // input
+        let dragging = false, panning = false, lastX = 0, lastY = 0, spaceDown = false, mouseBtn = -1;
+        addEventListener('keydown', e => { if (e.code === 'Space') spaceDown = true; });
+        addEventListener('keyup', e => { if (e.code === 'Space') spaceDown = false; });
+
+        canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+        canvas.addEventListener('mousedown', e => {
+            lastX = e.clientX; lastY = e.clientY; mouseBtn = e.button;
+            if (e.button === 1 || spaceDown) { panning = true; return; }
+            if (e.button === 0 && (eyeMode || e.altKey)) { pickAt(e); return; }
+            dragging = true; paintAt(e);
+        });
+        canvas.addEventListener('mousemove', e => {
+            if (panning) {
+                view.x += e.clientX - lastX; view.y += e.clientY - lastY;
+                lastX = e.clientX; lastY = e.clientY; draw(); return;
+            }
+            if (dragging) paintAt(e);
+        });
+        addEventListener('mouseup', () => { dragging = false; panning = false; mouseBtn = -1; });
+
+        canvas.addEventListener('wheel', e => {
+            e.preventDefault();
+            const f = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+            const mx = e.clientX - W / 2 - view.x, my = e.clientY - H / 2 - view.y;
+            view.x -= mx * (f - 1); view.y -= my * (f - 1);
+            view.scale *= f;
+            draw();
+        }, { passive: false });
+
+        function paintAt(e) {
+            const wx = (e.clientX - W / 2 - view.x) / view.scale;
+            const wy = (e.clientY - H / 2 - view.y) / view.scale;
+            const [c, r] = pixelToHex(wx, wy);
+            const k = c + ',' + r;
+            if (mouseBtn === 2) { delete state.hexagons[k]; }
+            else { state.hexagons[k] = state.colors[selColor].slice(); }
+            draw();
+        }
+
+        // palette
+        let eyeMode = false;
+        function toggleEye() {
+            eyeMode = !eyeMode;
+            document.getElementById('eyeBtn').style.background = eyeMode ? '#4a4' : '';
+            canvas.style.cursor = eyeMode ? 'copy' : 'crosshair';
+        }
+        function pickAt(e) {
+            const wx = (e.clientX - W / 2 - view.x) / view.scale;
+            const wy = (e.clientY - H / 2 - view.y) / view.scale;
+            const [c, r] = pixelToHex(wx, wy);
+            const col = state.hexagons[c + ',' + r];
+            if (!col) return;
+            let idx = state.colors.findIndex(x => x[0] === col[0] && x[1] === col[1] && x[2] === col[2] && x[3] === col[3]);
+            if (idx < 0) { state.colors.push(col.slice()); idx = state.colors.length - 1; }
+            selColor = idx;
+            renderPalette();
+        }
+        function renderPalette() {
+            const el = document.getElementById('palette');
+            el.innerHTML = '';
+            state.colors.forEach((c, i) => {
+                const d = document.createElement('div');
+                d.className = 'sw' + (i === selColor ? ' sel' : '');
+                d.style.background = rgba(c);
+                d.onclick = () => { selColor = i; renderPalette(); };
+                el.appendChild(d);
+            });
+        }
+        function hexToRgb(h) { const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+        function addColor() {
+            const rgb = hexToRgb(document.getElementById('picker').value);
+            const a = +document.getElementById('alpha').value;
+            state.colors.push([...rgb, a]);
+            selColor = state.colors.length - 1;
+            renderPalette();
+        }
+        function delColor() {
+            if (state.colors.length <= 1) return;
+            state.colors.splice(selColor, 1);
+            selColor = Math.min(selColor, state.colors.length - 1);
+            renderPalette();
+        }
+        function clearGrid() { state.hexagons = {}; draw(); }
+
+        function exportJSON() {
+            const blob = new Blob([JSON.stringify(state)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob); a.download = 'hexgrid.json'; a.click();
+        }
+        document.getElementById('imp').onchange = e => {
+            const f = e.target.files[0]; if (!f) return;
+            const r = new FileReader();
+            r.onload = () => {
+                try {
+                    const d = JSON.parse(r.result);
+                    state.hexagons = d.hexagons || {};
+                    state.colors = d.colors && d.colors.length ? d.colors : state.colors;
+                    selColor = 0; renderPalette(); draw();
+                } catch (err) { alert('Ошибка: ' + err.message); }
+            };
+            r.readAsText(f);
+        };
+
+        renderPalette();
+        resize();
+    </script>
+</body>
+
+</html>

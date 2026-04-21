@@ -1,0 +1,23 @@
+[package]
+name = "hoi25"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "generate"
+
+
+[profile.dev]
+opt-level = 0
+
+[profile.dev.package."*"]
+opt-level = 3
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bevy = { version = "0.18.1" }
+image = "0.25.10"
+rand = "0.10.1"
+serde = "1.0.228"
+serde_json = "1.0.149"
