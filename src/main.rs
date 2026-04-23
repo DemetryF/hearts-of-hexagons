@@ -1,12 +1,17 @@
-use std::{collections::HashMap, f32::consts::PI, fs};
+use std::{collections::HashMap, fs};
 
 use bevy::prelude::*;
 use serde::Deserialize;
 
 use crate::{
-    components::{Country, Map, PlayingCountry, Province},
+    components::{
+        Country, Division, DivisionsAtProvince, Map, PlayingCountry, Province, init_division_mesh,
+        select_division, setup_provinces_meshes,
+    },
     hexagon_pos::HexagonPos,
-    systems::{dispaly_country_info, gain_money, update_country_info},
+    systems::{
+        camera_movement, camera_zoom, dispaly_country_info, gain_money, update_country_info,
+    },
     tick::{Tick, run_tick, setup_ticks},
 };
 
@@ -15,8 +20,6 @@ pub mod hexagon_pos;
 pub mod systems;
 pub mod tick;
 
-const SIDE: f32 = 5.;
-
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
@@ -24,6 +27,7 @@ fn main() {
             Startup,
             (
                 (
+                    setup,
                     init_map_n_countries,
                     setup_provinces_meshes,
                     setup_playing_country,
@@ -33,11 +37,16 @@ fn main() {
                 setup_ticks,
             ),
         )
-        .add_systems(Update, run_tick)
-        .add_systems(FixedUpdate, (camera_zoom, camera_controls))
+        .add_systems(Update, (run_tick, select_division, init_division_mesh))
+        .add_systems(FixedUpdate, (camera_zoom, camera_movement))
         .add_systems(Tick, (gain_money, update_country_info))
         .insert_resource(Map::default())
+        .insert_resource(DivisionsAtProvince::default())
         .run();
+}
+
+fn setup(mut commands: Commands) {
+    commands.spawn(Camera2d);
 }
 
 fn setup_playing_country(mut commands: Commands, countries: Query<(&Country, Entity)>) {
@@ -45,6 +54,25 @@ fn setup_playing_country(mut commands: Commands, countries: Query<(&Country, Ent
         if &country.name == "Germany" {
             commands.entity(id).insert(PlayingCountry);
             println!("playing country is Germany");
+
+            commands.spawn(Division {
+                hp: 100,
+                max_hp: 120,
+                attack: 10,
+                defend: 10,
+                pos: HexagonPos { x: 32, y: -41 },
+                country: id,
+            });
+
+            commands.spawn(Division {
+                hp: 100,
+                max_hp: 120,
+                attack: 10,
+                defend: 10,
+                pos: HexagonPos { x: 32, y: -41 },
+                country: id,
+            });
+
             break;
         }
     }
@@ -87,120 +115,6 @@ fn init_map_n_countries(mut commands: Commands, mut map: ResMut<Map>) {
             },
         );
     }
-
-    println!("map & countries inited");
-}
-
-fn setup_provinces_meshes(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    countries: Query<&Country>,
-    map: Res<Map>,
-) {
-    println!("setting provinces meshes up");
-
-    commands.spawn(Camera2d);
-
-    let mesh = meshes.add(RegularPolygon::new(SIDE, 6));
-
-    for (&hpos, province) in &map.provinces {
-        let pos = hpos.real_regular(SIDE);
-        let country = province.control.unwrap();
-        let country = countries.get(country).unwrap();
-        let color = country.color;
-
-        commands.spawn((
-            Mesh2d(mesh.clone()),
-            MeshMaterial2d(materials.add(color)),
-            Transform::from_xyz(pos.x, pos.y, 0.0).with_rotation(Quat::from_rotation_z(PI / 2.)),
-        ));
-
-        for (neighbour, side) in hpos.neighbours().into_iter().zip(hpos.sides_regular(SIDE)) {
-            let border = map
-                .provinces
-                .get(&neighbour)
-                .is_some_and(|neighbour| neighbour.control != province.control);
-
-            if border {
-                commands.spawn((
-                    Mesh2d(meshes.add(Segment2d::new(side.0, side.1))),
-                    MeshMaterial2d(materials.add(Color::WHITE)),
-                    Transform::from_xyz(0., 0., 0.0),
-                ));
-            }
-        }
-    }
-}
-
-fn camera_controls(
-    camera_query: Single<&mut Transform, With<Camera2d>>,
-    input: Res<ButtonInput<KeyCode>>,
-    time: Res<Time<Fixed>>,
-) {
-    let mut transform = camera_query.into_inner();
-
-    let fspeed = 600.0 * time.delta_secs();
-
-    // Camera movement controls
-    if input.pressed(KeyCode::ArrowUp) {
-        transform.translation.y += fspeed;
-    }
-    if input.pressed(KeyCode::ArrowDown) {
-        transform.translation.y -= fspeed;
-    }
-    if input.pressed(KeyCode::ArrowLeft) {
-        transform.translation.x -= fspeed;
-    }
-    if input.pressed(KeyCode::ArrowRight) {
-        transform.translation.x += fspeed;
-    }
-}
-
-use bevy::input::mouse::{MouseScrollUnit, MouseWheel};
-
-fn camera_zoom(
-    mut camera: Query<(&Camera, &mut Transform, &GlobalTransform, &mut Projection)>,
-    window: Single<&Window>,
-    mut wheel: MessageReader<MouseWheel>,
-) {
-    if wheel.read().len() == 0 {
-        return;
-    }
-
-    let scale = {
-        wheel.read().fold(1., |scale, ev| {
-            let units = match ev.unit {
-                MouseScrollUnit::Line => ev.y,
-                MouseScrollUnit::Pixel => ev.y / 20.0,
-            };
-
-            scale * ops::powf(0.85, units)
-        })
-    };
-
-    let Ok((camera, mut transform, global, mut projection)) = camera.single_mut() else {
-        return;
-    };
-
-    let Projection::Orthographic(proj2d) = &mut *projection else {
-        return;
-    };
-
-    let Some(cursor) = window.cursor_position() else {
-        return;
-    };
-
-    let Ok(world_before) = camera.viewport_to_world_2d(global, cursor) else {
-        return;
-    };
-
-    proj2d.scale *= scale;
-
-    let cam_xy = transform.translation.truncate();
-    let new_cam = world_before * (1.0 - scale) + cam_xy * scale;
-    transform.translation.x = new_cam.x;
-    transform.translation.y = new_cam.y;
 }
 
 fn world_from_json() -> (HashMap<HexagonPos, [u8; 4]>, HashMap<[u8; 4], String>) {

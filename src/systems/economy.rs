@@ -1,6 +1,9 @@
 use crate::components::{Country, Map};
 use bevy::prelude::*;
 
+pub const MONEY_PER_HOUR: usize = 1;
+
+/// Every hour every province produces `MONEY_PER_HOUR` for its owner
 pub fn gain_money(map: Res<Map>, mut countries: Query<&mut Country>) {
     for (_, province) in &map.provinces {
         let Some(country) = province.control else {
@@ -9,6 +12,6 @@ pub fn gain_money(map: Res<Map>, mut countries: Query<&mut Country>) {
 
         let mut country = countries.get_mut(country).unwrap();
 
-        country.money += 1;
+        country.money += MONEY_PER_HOUR;
     }
 }
