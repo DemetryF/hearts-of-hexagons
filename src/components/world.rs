@@ -1,3 +1,7 @@
+mod interface;
+
+pub use interface::*;
+
 use std::{collections::HashMap, f32::consts::PI};
 
 use bevy::prelude::*;
@@ -35,6 +39,7 @@ pub fn setup_provinces_meshes(
             Mesh2d(mesh.clone()),
             MeshMaterial2d(materials.add(color)),
             Transform::from_xyz(pos.x, pos.y, 0.0).with_rotation(Quat::from_rotation_z(PI / 2.)),
+            hpos,
         ));
 
         for (neighbour, side) in hpos.neighbours().into_iter().zip(hpos.sides_regular(SIDE)) {

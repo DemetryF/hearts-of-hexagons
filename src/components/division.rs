@@ -1,6 +1,8 @@
 mod interface;
+mod movement;
 
 pub use interface::*;
+pub use movement::*;
 
 use bevy::prelude::*;
 
@@ -15,6 +17,7 @@ pub struct Division {
 
     pub attack: usize,
     pub defend: usize,
+    pub speed: f32,
 
     pub pos: HexagonPos,
     pub country: Entity,

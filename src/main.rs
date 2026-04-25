@@ -5,20 +5,22 @@ use serde::Deserialize;
 
 use crate::{
     components::{
-        Country, Division, DivisionsAtProvince, Map, PlayingCountry, Province, init_division_mesh,
-        select_division, setup_provinces_meshes,
+        Country, Division, DivisionsAtProvince, Highlighted, HoveredProvince, Map, PlayingCountry,
+        Province, calculate_path, cancel_selection, draw_selection, end_moving, init_division_mesh,
+        process_moving, regenerate_division, select_division, setup_provinces_meshes, start_moving,
+        undraw_selection, unhighlight, update_highlighted, update_hovered,
     },
     hexagon_pos::HexagonPos,
     systems::{
-        camera_movement, camera_zoom, dispaly_country_info, gain_money, update_country_info,
+        camera_movement, camera_zoom, display_country_info, gain_money, update_country_info,
     },
     tick::{Tick, run_tick, setup_ticks},
 };
 
-pub mod components;
-pub mod hexagon_pos;
-pub mod systems;
-pub mod tick;
+mod components;
+mod hexagon_pos;
+mod systems;
+mod tick;
 
 fn main() {
     App::new()
@@ -31,17 +33,37 @@ fn main() {
                     init_map_n_countries,
                     setup_provinces_meshes,
                     setup_playing_country,
-                    dispaly_country_info,
+                    display_country_info,
                 )
                     .chain(),
                 setup_ticks,
             ),
         )
-        .add_systems(Update, (run_tick, select_division, init_division_mesh))
+        .add_systems(
+            Update,
+            (
+                run_tick,
+                select_division,
+                init_division_mesh,
+                update_hovered,
+                cancel_selection,
+                regenerate_division,
+                start_moving,
+                calculate_path,
+                end_moving,
+                (unhighlight, update_highlighted)
+                    .chain()
+                    .run_if(resource_changed::<HoveredProvince>),
+            ),
+        )
         .add_systems(FixedUpdate, (camera_zoom, camera_movement))
-        .add_systems(Tick, (gain_money, update_country_info))
+        .add_systems(Tick, (gain_money, update_country_info, process_moving))
+        .add_observer(undraw_selection)
+        .add_observer(draw_selection)
         .insert_resource(Map::default())
         .insert_resource(DivisionsAtProvince::default())
+        .insert_resource(Highlighted::default())
+        .insert_resource(HoveredProvince::default())
         .run();
 }
 
@@ -60,6 +82,7 @@ fn setup_playing_country(mut commands: Commands, countries: Query<(&Country, Ent
                 max_hp: 120,
                 attack: 10,
                 defend: 10,
+                speed: 10.,
                 pos: HexagonPos { x: 32, y: -41 },
                 country: id,
             });
@@ -69,6 +92,17 @@ fn setup_playing_country(mut commands: Commands, countries: Query<(&Country, Ent
                 max_hp: 120,
                 attack: 10,
                 defend: 10,
+                speed: 10.,
+                pos: HexagonPos { x: 32, y: -41 },
+                country: id,
+            });
+
+            commands.spawn(Division {
+                hp: 100,
+                max_hp: 120,
+                attack: 10,
+                defend: 10,
+                speed: 10.,
                 pos: HexagonPos { x: 32, y: -41 },
                 country: id,
             });

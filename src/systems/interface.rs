@@ -7,7 +7,7 @@ const BACKGROUND_COLOR: Color = Color::linear_rgba(0.4, 0.4, 0.4, 0.5);
 #[derive(Component)]
 pub struct UiMoneyLabel;
 
-pub fn dispaly_country_info(
+pub fn display_country_info(
     country: Option<Single<&Country, With<PlayingCountry>>>,
     mut commands: Commands,
 ) {
