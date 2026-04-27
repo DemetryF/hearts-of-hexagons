@@ -3,17 +3,21 @@ use bevy::{
     prelude::*,
 };
 
-const MOVING_SPEED: f32 = 300.0;
+const MOVING_SPEED: f32 = 500.0;
 const MOVE_FIELD_SIZE: f32 = 100.;
 
 pub fn camera_movement(
-    camera_query: Single<&mut Transform, With<Camera2d>>,
+    camera_query: Single<(&mut Transform, &Projection), With<Camera2d>>,
     time: Res<Time<Fixed>>,
     window: Single<&Window>,
 ) {
-    let mut transform = camera_query.into_inner();
+    let (mut transform, proj) = camera_query.into_inner();
 
-    let fspeed = MOVING_SPEED * time.delta_secs();
+    let Projection::Orthographic(proj2d) = proj else {
+        return;
+    };
+
+    let fspeed = MOVING_SPEED * proj2d.scale * time.delta_secs();
 
     let Some(cursor) = window.cursor_position() else {
         return;
