@@ -47,7 +47,9 @@ pub fn setup_provinces_meshes(
             ))
             .id();
 
-        for (neighbour, side) in zip(hpos.neighbours(), HexagonPos::ZERO.sides_regular(SIDE)) {
+        for (neighbour, side) in
+            zip(hpos.neighbours(), HexagonPos::ZERO.sides_regular(SIDE)).take(3)
+        {
             let border = map
                 .provinces
                 .get(&neighbour)

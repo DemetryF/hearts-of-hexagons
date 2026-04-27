@@ -3,7 +3,7 @@ use {
     bevy::prelude::*,
 };
 
-const COLOR_CHANGE_FACTOR: f32 = 1.1;
+const COLOR_CHANGE_FACTOR: f32 = 1.2;
 
 #[derive(Resource, Default)]
 pub struct HoveredProvince(pub Option<HexagonPos>);

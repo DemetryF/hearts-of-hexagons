@@ -3,7 +3,7 @@ use bevy::{
     prelude::*,
 };
 
-const MOVING_SPEED: f32 = 500.0;
+const MOVING_SPEED: f32 = 450.0;
 const MOVE_FIELD_SIZE: f32 = 100.;
 
 pub fn camera_movement(
