@@ -22,6 +22,11 @@ pub struct Province {
     pub control: Option<Entity>,
 }
 
+#[derive(Component, PartialEq, Eq)]
+pub struct Border {
+    between: [HexagonPos; 2],
+}
+
 pub fn setup_provinces_meshes(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -37,15 +42,12 @@ pub fn setup_provinces_meshes(
         let country = countries.get(country).unwrap();
         let color = country.color;
 
-        let prov_id = commands
-            .spawn((
-                Mesh2d(mesh.clone()),
-                MeshMaterial2d(materials.add(color)),
-                Transform::from_xyz(pos.x, pos.y, 0.0)
-                    .with_rotation(Quat::from_rotation_z(PI / 2.)),
-                hpos,
-            ))
-            .id();
+        commands.spawn((
+            Mesh2d(mesh.clone()),
+            MeshMaterial2d(materials.add(color)),
+            Transform::from_xyz(pos.x, pos.y, 0.0).with_rotation(Quat::from_rotation_z(PI / 2.)),
+            hpos,
+        ));
 
         for (neighbour, side) in
             zip(hpos.neighbours(), HexagonPos::ZERO.sides_regular(SIDE)).take(3)
@@ -56,10 +58,13 @@ pub fn setup_provinces_meshes(
                 .is_some_and(|neighbour| neighbour.control != province.control);
 
             if border {
-                commands.entity(prov_id).with_child((
+                commands.spawn((
+                    Border {
+                        between: [hpos, neighbour],
+                    },
                     Mesh2d(meshes.add(Segment2d::new(side.0, side.1))),
                     MeshMaterial2d(materials.add(Color::WHITE)),
-                    Transform::from_xyz(0., 0., 0.1).with_rotation(Quat::from_rotation_z(-PI / 2.)),
+                    Transform::from_xyz(pos.x, pos.y, 0.1),
                 ));
             }
         }

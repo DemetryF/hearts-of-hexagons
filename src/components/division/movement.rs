@@ -41,6 +41,8 @@ pub fn start_moving(
         && let Some(hovered) = hovered_province.0
         && let Some(selected) = selected
     {
+        println!("start moving");
+
         commands
             .entity(*selected)
             .insert(MovingOrder { to: hovered });

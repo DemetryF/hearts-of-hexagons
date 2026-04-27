@@ -2,8 +2,8 @@ use {
     crate::{
         components::{
             Country, Division, DivisionsAtProvince, Highlighted, HoveredProvince, Map,
-            PlayingCountry, Province, calculate_path, cancel_selection, draw_selection, end_moving,
-            init_division_mesh, process_moving, regenerate_division, select_division,
+            PlayingCountry, Province, calculate_path, cancel_selection, capture, draw_selection,
+            end_moving, init_division_mesh, process_moving, regenerate_division, select_division,
             setup_provinces_meshes, start_moving, undraw_selection, unhighlight,
             update_divisions_mesh, update_highlighted, update_hovered,
         },
@@ -64,6 +64,7 @@ fn main() {
         .add_observer(undraw_selection)
         .add_observer(draw_selection)
         .add_observer(update_divisions_mesh)
+        .add_observer(capture)
         .insert_resource(Map::default())
         .insert_resource(DivisionsAtProvince::default())
         .insert_resource(Highlighted::default())
