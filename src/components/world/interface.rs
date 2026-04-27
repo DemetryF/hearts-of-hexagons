@@ -20,14 +20,14 @@ pub fn update_hovered(
         .cursor_position()
         .and_then(|c| camera.viewport_to_world_2d(camera_transform, c).ok())
     else {
+        hovered.0 = None;
         return;
     };
 
     let cursor_hpos = HexagonPos::from_real_regular(cursor_pos, 5.);
 
-    if map.provinces.contains_key(&cursor_hpos) {
-        hovered.0 = Some(cursor_hpos);
-    }
+    hovered.0 = (map.provinces.contains_key(&cursor_hpos) && Some(cursor_hpos) != hovered.0)
+        .then_some(cursor_hpos);
 }
 
 #[derive(Resource, Default)]

@@ -1,5 +1,7 @@
 mod interface;
 
+use std::iter::zip;
+
 pub use interface::*;
 
 use {
@@ -35,24 +37,27 @@ pub fn setup_provinces_meshes(
         let country = countries.get(country).unwrap();
         let color = country.color;
 
-        commands.spawn((
-            Mesh2d(mesh.clone()),
-            MeshMaterial2d(materials.add(color)),
-            Transform::from_xyz(pos.x, pos.y, 0.0).with_rotation(Quat::from_rotation_z(PI / 2.)),
-            hpos,
-        ));
+        let prov_id = commands
+            .spawn((
+                Mesh2d(mesh.clone()),
+                MeshMaterial2d(materials.add(color)),
+                Transform::from_xyz(pos.x, pos.y, 0.0)
+                    .with_rotation(Quat::from_rotation_z(PI / 2.)),
+                hpos,
+            ))
+            .id();
 
-        for (neighbour, side) in hpos.neighbours().into_iter().zip(hpos.sides_regular(SIDE)) {
+        for (neighbour, side) in zip(hpos.neighbours(), HexagonPos::ZERO.sides_regular(SIDE)) {
             let border = map
                 .provinces
                 .get(&neighbour)
                 .is_some_and(|neighbour| neighbour.control != province.control);
 
             if border {
-                commands.spawn((
+                commands.entity(prov_id).with_child((
                     Mesh2d(meshes.add(Segment2d::new(side.0, side.1))),
                     MeshMaterial2d(materials.add(Color::WHITE)),
-                    Transform::default(),
+                    Transform::from_xyz(0., 0., 0.1).with_rotation(Quat::from_rotation_z(-PI / 2.)),
                 ));
             }
         }
