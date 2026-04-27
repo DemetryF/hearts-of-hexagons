@@ -1,7 +1,7 @@
-use std::time::Duration;
-
-use bevy::ecs::schedule::ScheduleLabel;
-use bevy::prelude::*;
+use {
+    bevy::{ecs::schedule::ScheduleLabel, prelude::*},
+    std::time::Duration,
+};
 
 #[derive(ScheduleLabel, Hash, Debug, PartialEq, Eq, Clone, Copy)]
 pub struct Tick;

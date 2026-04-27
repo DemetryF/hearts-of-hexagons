@@ -1,20 +1,22 @@
-use std::{collections::HashMap, fs};
-
-use bevy::prelude::*;
-use serde::Deserialize;
-
-use crate::{
-    components::{
-        Country, Division, DivisionsAtProvince, Highlighted, HoveredProvince, Map, PlayingCountry,
-        Province, calculate_path, cancel_selection, draw_selection, end_moving, init_division_mesh,
-        process_moving, regenerate_division, select_division, setup_provinces_meshes, start_moving,
-        undraw_selection, unhighlight, update_highlighted, update_hovered,
+use {
+    crate::{
+        components::{
+            Country, Division, DivisionsAtProvince, Highlighted, HoveredProvince, Map,
+            PlayingCountry, Province, calculate_path, cancel_selection, draw_selection, end_moving,
+            init_division_mesh, process_moving, regenerate_division, select_division,
+            setup_provinces_meshes, start_moving, undraw_selection, unhighlight,
+            update_divisions_mesh, update_highlighted, update_hovered,
+        },
+        hexagon_pos::HexagonPos,
+        systems::{
+            buy_division_button, camera_movement, camera_zoom, display_country_info, gain_money,
+            update_country_info,
+        },
+        tick::{Tick, run_tick, setup_ticks},
     },
-    hexagon_pos::HexagonPos,
-    systems::{
-        camera_movement, camera_zoom, display_country_info, gain_money, update_country_info,
-    },
-    tick::{Tick, run_tick, setup_ticks},
+    bevy::{input_focus::InputFocus, prelude::*},
+    serde::Deserialize,
+    std::{collections::HashMap, fs},
 };
 
 mod components;
@@ -34,6 +36,7 @@ fn main() {
                     setup_provinces_meshes,
                     setup_playing_country,
                     display_country_info,
+                    init_division_mesh,
                 )
                     .chain(),
                 setup_ticks,
@@ -44,13 +47,13 @@ fn main() {
             (
                 run_tick,
                 select_division,
-                init_division_mesh,
                 update_hovered,
                 cancel_selection,
                 regenerate_division,
                 start_moving,
                 calculate_path,
                 end_moving,
+                buy_division_button,
                 (unhighlight, update_highlighted)
                     .chain()
                     .run_if(resource_changed::<HoveredProvince>),
@@ -60,10 +63,12 @@ fn main() {
         .add_systems(Tick, (gain_money, update_country_info, process_moving))
         .add_observer(undraw_selection)
         .add_observer(draw_selection)
+        .add_observer(update_divisions_mesh)
         .insert_resource(Map::default())
         .insert_resource(DivisionsAtProvince::default())
         .insert_resource(Highlighted::default())
         .insert_resource(HoveredProvince::default())
+        .init_resource::<InputFocus>()
         .run();
 }
 

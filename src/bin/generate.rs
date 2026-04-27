@@ -1,11 +1,12 @@
-use std::{
-    collections::{HashMap, HashSet},
-    env, fs,
+use {
+    hoi25::hexagon_pos::HexagonPos,
+    image::{GenericImageView, ImageReader},
+    serde::Serialize,
+    std::{
+        collections::{HashMap, HashSet},
+        env, fs,
+    },
 };
-
-use hoi25::hexagon_pos::HexagonPos;
-use image::{GenericImageView, ImageReader};
-use serde::Serialize;
 
 fn main() {
     let mut args = env::args();

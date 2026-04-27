@@ -2,11 +2,11 @@ mod interface;
 
 pub use interface::*;
 
-use std::{collections::HashMap, f32::consts::PI};
-
-use bevy::prelude::*;
-
-use crate::{components::Country, hexagon_pos::HexagonPos};
+use {
+    crate::{components::Country, hexagon_pos::HexagonPos},
+    bevy::prelude::*,
+    std::{collections::HashMap, f32::consts::PI},
+};
 
 const SIDE: f32 = 5.;
 

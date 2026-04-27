@@ -1,17 +1,33 @@
-use std::{
-    cmp::Reverse,
-    collections::{BinaryHeap, HashMap, HashSet},
+use {
+    crate::{
+        components::{Division, HoveredProvince, Map, SelectedDivision},
+        hexagon_pos::HexagonPos,
+    },
+    bevy::prelude::*,
+    std::{
+        cmp::Reverse,
+        collections::{BinaryHeap, HashMap, HashSet},
+    },
 };
 
-use bevy::prelude::*;
-
-use crate::{
-    components::{Division, HoveredProvince, Map, SelectedDivision},
-    hexagon_pos::HexagonPos,
-};
+const PROV_DISTANCE: usize = 1;
 
 #[derive(Component)]
 pub struct MovingOrder {
+    pub to: HexagonPos,
+}
+
+#[derive(Component)]
+pub struct Path {
+    pub provs: Vec<HexagonPos>,
+    pub progress: usize,
+}
+
+#[derive(EntityEvent)]
+pub struct DivisionMoved {
+    pub entity: Entity,
+
+    pub from: HexagonPos,
     pub to: HexagonPos,
 }
 
@@ -31,12 +47,6 @@ pub fn start_moving(
 
         commands.entity(*selected).remove::<SelectedDivision>();
     }
-}
-
-#[derive(Component)]
-pub struct Path {
-    pub provs: Vec<HexagonPos>,
-    pub progress: usize,
 }
 
 pub fn calculate_path(
@@ -121,16 +131,24 @@ pub fn calculate_path(
     println!("couldnt find path");
 }
 
-const DISTANCE: usize = 1;
-
-pub fn process_moving(divisions: Query<(&mut Path, &mut Division)>) {
-    for (mut path, mut division) in divisions {
+pub fn process_moving(
+    divisions: Query<(Entity, &mut Path, &mut Division)>,
+    mut commands: Commands,
+) {
+    for (entity, mut path, mut division) in divisions {
         path.progress += 1;
 
-        if path.progress == DISTANCE {
+        if path.progress == PROV_DISTANCE {
             path.progress = 0;
 
+            let from = division.pos;
             division.pos = path.provs.pop().unwrap();
+
+            commands.entity(entity).trigger(|entity| DivisionMoved {
+                entity,
+                from,
+                to: division.pos,
+            });
         }
     }
 }

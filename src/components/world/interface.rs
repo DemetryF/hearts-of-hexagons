@@ -1,5 +1,7 @@
-use crate::{components::Map, hexagon_pos::HexagonPos};
-use bevy::prelude::*;
+use {
+    crate::{components::Map, hexagon_pos::HexagonPos},
+    bevy::prelude::*,
+};
 
 const COLOR_CHANGE_FACTOR: f32 = 1.1;
 

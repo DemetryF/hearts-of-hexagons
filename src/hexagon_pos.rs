@@ -1,7 +1,8 @@
-use std::{f32::consts::PI, ops::Add};
-
-use bevy::{ecs::component::Component, math::Vec2};
-use serde::Serialize;
+use {
+    bevy::{ecs::component::Component, math::Vec2},
+    serde::Serialize,
+    std::{f32::consts::PI, ops::Add},
+};
 
 #[derive(Clone, Copy, Hash, PartialEq, Eq, Serialize, Component)]
 pub struct HexagonPos {

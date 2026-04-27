@@ -1,12 +1,12 @@
 mod interface;
 mod movement;
 
-pub use interface::*;
-pub use movement::*;
+pub use {interface::*, movement::*};
 
-use bevy::prelude::*;
-
-use crate::{components::Country, hexagon_pos::HexagonPos};
+use {
+    crate::{components::Country, hexagon_pos::HexagonPos},
+    bevy::prelude::*,
+};
 
 const REGENERATION_COST: usize = 20;
 
@@ -23,6 +23,7 @@ pub struct Division {
     pub country: Entity,
 }
 
+// limit speed of regeneration
 pub fn regenerate_division(divisions: Query<&mut Division>, mut countries: Query<&mut Country>) {
     for mut division in divisions {
         if division.hp == division.max_hp {

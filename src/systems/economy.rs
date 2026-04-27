@@ -1,5 +1,7 @@
-use crate::components::{Country, Map};
-use bevy::prelude::*;
+use {
+    crate::components::{Country, Map},
+    bevy::prelude::*,
+};
 
 pub const MONEY_PER_HOUR: usize = 1;
 
