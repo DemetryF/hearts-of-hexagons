@@ -1,9 +1,9 @@
 use {
-    crate::components::{Country, PlayingCountry},
+    crate::components::{Country, HoveredProvince, PlayingCountry},
     bevy::{input_focus::InputFocus, prelude::*},
 };
 
-const BACKGROUND_COLOR: Color = Color::linear_rgba(0.4, 0.4, 0.4, 0.5);
+const BACKGROUND_COLOR: Color = Color::linear_rgba(0.3, 0.3, 0.3, 0.4);
 
 const BUTTON_NORMAL_COLOR: Color = Color::linear_rgb(0.4, 0.4, 0.4);
 const BUTTON_HOVERED_COLOR: Color = Color::linear_rgb(0.43, 0.43, 0.43);
@@ -15,6 +15,12 @@ pub struct UiMoneyLabel;
 #[derive(Component)]
 pub struct UiBuyDivisionButton;
 
+#[derive(Component)]
+pub struct UiProvInfo;
+
+#[derive(Component)]
+pub struct UiProvCoords;
+
 pub fn display_country_info(
     country: Option<Single<&Country, With<PlayingCountry>>>,
     mut commands: Commands,
@@ -25,23 +31,20 @@ pub fn display_country_info(
 
     println!("display country info");
 
-    commands
-        .spawn((
-            Node {
-                width: percent(20),
-                height: percent(20),
-                flex_direction: FlexDirection::Column,
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::SpaceEvenly,
-                margin: UiRect::all(percent(1)),
-                border_radius: BorderRadius::all(percent(5)),
-
-                ..Default::default()
-            },
-            BackgroundColor(BACKGROUND_COLOR),
-        ))
-        .with_children(|parent| {
-            parent.spawn((
+    commands.spawn((
+        Node {
+            width: percent(20),
+            height: percent(20),
+            flex_direction: FlexDirection::Column,
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::SpaceEvenly,
+            margin: UiRect::all(percent(1)),
+            border_radius: BorderRadius::all(percent(5)),
+            ..Default::default()
+        },
+        BackgroundColor(BACKGROUND_COLOR),
+        children![
+            (
                 UiMoneyLabel,
                 Text::new(format!("{}\nmoney: {}\n", country.name, country.money)),
                 TextLayout::new_with_justify(Justify::Center),
@@ -49,41 +52,35 @@ pub fn display_country_info(
                     margin: UiRect::bottom(px(10)),
                     ..Default::default()
                 },
-            ));
-
-            parent.spawn((
+            ),
+            (
                 UiBuyDivisionButton,
                 Button,
                 Node {
                     align_items: AlignItems::Center,
                     justify_content: JustifyContent::SpaceEvenly,
-                    border: UiRect::all(px(2)),
+                    border_radius: BorderRadius::all(px(20)),
+                    padding: UiRect::horizontal(px(10)),
                     ..Default::default()
                 },
-                BorderColor::all(Color::WHITE),
-                BackgroundColor(Color::linear_rgb(0.5, 0.5, 0.5)),
+                BackgroundColor(BUTTON_NORMAL_COLOR),
                 children![(
                     Text::new("Buy division"),
                     TextLayout::new_with_justify(Justify::Center),
                 )],
-            ));
-        });
+            )
+        ],
+    ));
 }
 
 pub fn buy_division_button(
     mut input_focus: ResMut<InputFocus>,
     query: Query<
-        (
-            Entity,
-            &Interaction,
-            &mut BackgroundColor,
-            &mut Button,
-            &mut BorderColor,
-        ),
+        (Entity, &Interaction, &mut BackgroundColor, &mut Button),
         (Changed<Interaction>, With<UiBuyDivisionButton>),
     >,
 ) {
-    for (id, &interaction, mut color, mut button, mut border_color) in query {
+    for (id, &interaction, mut color, mut button) in query {
         match interaction {
             Interaction::Pressed => {
                 input_focus.set(id);
@@ -100,8 +97,6 @@ pub fn buy_division_button(
                 color.0 = BUTTON_NORMAL_COLOR;
             }
         }
-
-        *border_color = BorderColor::all(color.0);
     }
 }
 
@@ -116,4 +111,43 @@ pub fn update_country_info(
     let mut money_label = money_label.unwrap();
 
     money_label.0 = format!("{}\nmoney: {}", country.name, country.money);
+}
+
+pub fn init_hovered_prov_info(mut commands: Commands) {
+    commands.spawn((
+        UiProvInfo,
+        Node {
+            position_type: PositionType::Absolute,
+            left: px(0),
+            bottom: px(0),
+
+            width: percent(20),
+            height: percent(20),
+
+            flex_direction: FlexDirection::Column,
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::SpaceEvenly,
+
+            margin: UiRect::all(percent(1)),
+            border_radius: BorderRadius::all(percent(5)),
+
+            ..Default::default()
+        },
+        Visibility::Hidden,
+        BackgroundColor(BACKGROUND_COLOR),
+        children![Text::new("Province"), (Text::new(""), UiProvCoords)],
+    ));
+}
+
+pub fn update_hovered_prov_info(
+    vis: Single<&mut Visibility, With<UiProvInfo>>,
+    mut label: Single<&mut Text, With<UiProvCoords>>,
+    hovered: Res<HoveredProvince>,
+) {
+    if let Some(hovered) = hovered.0 {
+        *vis.into_inner() = Visibility::Visible;
+        label.0 = format!("({}, {})", hovered.x, hovered.y);
+    } else {
+        *vis.into_inner() = Visibility::Hidden;
+    };
 }

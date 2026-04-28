@@ -10,7 +10,7 @@ use {
         hexagon_pos::HexagonPos,
         systems::{
             buy_division_button, camera_movement, camera_zoom, display_country_info, gain_money,
-            update_country_info,
+            init_hovered_prov_info, update_country_info, update_hovered_prov_info,
         },
         tick::{Tick, run_tick, setup_ticks},
     },
@@ -36,6 +36,7 @@ fn main() {
                     setup_provinces_meshes,
                     setup_playing_country,
                     display_country_info,
+                    init_hovered_prov_info,
                     init_division_mesh,
                 )
                     .chain(),
@@ -54,6 +55,7 @@ fn main() {
                 calculate_path,
                 end_moving,
                 buy_division_button,
+                update_hovered_prov_info,
                 (unhighlight, update_highlighted)
                     .chain()
                     .run_if(resource_changed::<HoveredProvince>),
