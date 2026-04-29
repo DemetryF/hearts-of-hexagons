@@ -1,11 +1,11 @@
 use {
     crate::{
         components::{
-            Country, Division, DivisionsAtProvince, Highlighted, HoveredProvince, Map,
+            Country, Division, DivisionsAtProvince, Highlighted, HoveredProvince, Map, Owner,
             PlayingCountry, Province, calculate_path, cancel_selection, capture, draw_selection,
             end_moving, init_division_mesh, process_moving, regenerate_division, select_division,
-            setup_provinces_meshes, start_moving, undraw_selection, unhighlight,
-            update_divisions_mesh, update_highlighted, update_hovered,
+            setup_provs_meshes, start_moving, undraw_selection, unhighlight, update_borders,
+            update_divisions_mesh, update_highlighted, update_hovered, update_prov_color,
         },
         hexagon_pos::HexagonPos,
         systems::{
@@ -33,7 +33,7 @@ fn main() {
                 (
                     setup,
                     init_map_n_countries,
-                    setup_provinces_meshes,
+                    setup_provs_meshes,
                     setup_playing_country,
                     display_country_info,
                     init_hovered_prov_info,
@@ -56,6 +56,8 @@ fn main() {
                 end_moving,
                 buy_division_button,
                 update_hovered_prov_info,
+                update_borders,
+                update_prov_color,
                 (unhighlight, update_highlighted)
                     .chain()
                     .run_if(resource_changed::<HoveredProvince>),
@@ -146,16 +148,13 @@ fn init_map_n_countries(mut commands: Commands, mut map: ResMut<Map>) {
     }
 
     for (pos, color) in hexagons {
-        let Some(&control) = countries_id.get(&color) else {
-            panic!("{color:?}")
-        };
+        let control = countries_id[&color];
 
-        map.provinces.insert(
-            pos,
-            Province {
-                control: Some(control),
-            },
-        );
+        let id = commands
+            .spawn((Province { pos }, Owner(Some(control))))
+            .id();
+
+        map.provs.insert(pos, id);
     }
 }
 

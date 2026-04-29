@@ -1,18 +1,16 @@
 use {
-    bevy::{ecs::component::Component, math::Vec2},
+    bevy::math::Vec2,
     serde::Serialize,
     std::{f32::consts::PI, ops::Add},
 };
 
-#[derive(Clone, Copy, Hash, PartialEq, Eq, Serialize, Component)]
+#[derive(Clone, Copy, Hash, PartialEq, Eq, Serialize)]
 pub struct HexagonPos {
     pub x: i32,
     pub y: i32,
 }
 
 impl HexagonPos {
-    pub const ZERO: Self = Self::new(0, 0);
-
     pub const fn new(x: i32, y: i32) -> Self {
         Self { x, y }
     }

@@ -33,12 +33,12 @@ pub struct DivisionMoved {
 
 pub fn start_moving(
     selected: Option<Single<Entity, With<SelectedDivision>>>,
-    hovered_province: Res<HoveredProvince>,
+    hovered_prov: Res<HoveredProvince>,
     input: Res<ButtonInput<MouseButton>>,
     mut commands: Commands,
 ) {
     if input.just_pressed(MouseButton::Left)
-        && let Some(hovered) = hovered_province.0
+        && let Some(hovered) = hovered_prov.0
         && let Some(selected) = selected
     {
         println!("start moving");
@@ -95,7 +95,7 @@ pub fn calculate_path(
         visited.insert(current);
 
         for neighbour in current.neighbours() {
-            if !map.provinces.contains_key(&neighbour) {
+            if !map.provs.contains_key(&neighbour) {
                 continue;
             }
 

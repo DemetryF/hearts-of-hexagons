@@ -1,6 +1,6 @@
 use {
     crate::{
-        components::{Border, Country, Division, DivisionMoved, Map},
+        components::{Border, Country, Division, DivisionMoved, Map, Owner, Province},
         hexagon_pos::HexagonPos,
     },
     bevy::prelude::*,
@@ -18,42 +18,56 @@ pub struct Highlighted(Option<Entity>);
 pub fn capture(
     event: On<DivisionMoved>,
     divisions: Query<&Division>,
-    provs: Query<(&HexagonPos, &mut MeshMaterial2d<ColorMaterial>)>,
+    mut provs: Query<&mut Owner>,
+    map: ResMut<Map>,
+) {
+    let country = divisions.get(event.event_target()).unwrap().country;
+
+    let captured_id = map.provs[&event.to];
+    let mut captured_owner = provs.get_mut(captured_id).unwrap();
+
+    if captured_owner.0 != Some(country) {
+        captured_owner.0 = Some(country);
+    }
+}
+
+pub fn update_prov_color(
+    provs: Query<(&mut MeshMaterial2d<ColorMaterial>, &Owner), Changed<Owner>>,
     countries: Query<&Country>,
-    borders: Query<(Entity, &Border)>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+) {
+    for (mut material, owner) in provs {
+        let color = countries.get(owner.0.unwrap()).unwrap().color;
+
+        material.0 = materials.add(color);
+    }
+}
+
+pub fn update_borders(
+    provs: Query<(&Province, &Owner), Changed<Owner>>,
+    owners: Query<&Owner>,
+    borders: Query<(Entity, &Border)>,
+    map: Res<Map>,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut map: ResMut<Map>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
     mut commands: Commands,
 ) {
-    let division_country_id = divisions.get(event.event_target()).unwrap().country;
-    let division_country = countries.get(division_country_id).unwrap();
-
-    if map.provinces[&event.to].control != Some(division_country_id) {
-        map.provinces.get_mut(&event.to).unwrap().control = Some(division_country_id);
-
-        let (_, mut material) = provs.into_iter().find(|&(&p, _)| p == event.to).unwrap();
-
-        material.0 = materials.add(division_country.color);
-
-        for (id, _) in borders
-            .into_iter()
-            .filter(|(_, b)| b.between.contains(&event.to))
-        {
-            commands.entity(id).despawn();
+    for (prov, owner) in provs {
+        for (id, border) in borders {
+            if border.between.contains(&prov.pos) {
+                commands.entity(id).despawn();
+            }
         }
 
-        for (neighbour, side) in zip(event.to.neighbours(), event.to.sides_regular(5.)) {
-            let border = map
-                .provinces
-                .get(&neighbour)
-                .is_some_and(|neighbour| neighbour.control != Some(division_country_id));
+        let neighbors = zip(prov.pos.neighbours(), prov.pos.sides_regular(5.));
+
+        for (neighbor, side) in neighbors {
+            let border = (map.provs.get(&neighbor))
+                .is_some_and(|&neighbor| owners.get(neighbor).unwrap() != owner);
 
             if border {
                 commands.spawn((
-                    Border {
-                        between: [event.to, neighbour],
-                    },
+                    Border::new(prov.pos, neighbor),
                     Mesh2d(meshes.add(Segment2d::new(side.0, side.1))),
                     MeshMaterial2d(materials.add(Color::WHITE)),
                     Transform::from_xyz(0., 0., 0.1),
@@ -85,25 +99,21 @@ pub fn update_hovered(
         return;
     }
 
-    hovered.0 = map
-        .provinces
-        .contains_key(&cursor_hpos)
-        .then_some(cursor_hpos);
+    hovered.0 = map.provs.contains_key(&cursor_hpos).then_some(cursor_hpos);
 }
 
 pub fn unhighlight(
-    mut provs: Query<(&HexagonPos, &mut MeshMaterial2d<ColorMaterial>), With<Mesh2d>>,
+    mut provs: Query<(&Owner, &mut MeshMaterial2d<ColorMaterial>)>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     countries: Query<&Country>,
-    map: Res<Map>,
     highlighted: ResMut<Highlighted>,
 ) {
     let Some(prev_id) = highlighted.0 else { return };
 
-    let (&pos, mut material) = provs.get_mut(prev_id).unwrap();
+    let (owner, mut material) = provs.get_mut(prev_id).unwrap();
 
     // TODO province can be unclaimed
-    let prov_owner = map.provinces[&pos].control.unwrap();
+    let prov_owner = owner.0.unwrap();
     let country = countries.get(prov_owner).unwrap();
     let color = country.color;
 
@@ -111,7 +121,7 @@ pub fn unhighlight(
 }
 
 pub fn update_highlighted(
-    mut provs: Query<(Entity, &HexagonPos, &mut MeshMaterial2d<ColorMaterial>), With<Mesh2d>>,
+    mut provs: Query<(Entity, &Province, &mut MeshMaterial2d<ColorMaterial>), With<Mesh2d>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut highlighted: ResMut<Highlighted>,
     hovered: Res<HoveredProvince>,
@@ -121,9 +131,11 @@ pub fn update_highlighted(
         return;
     };
 
-    let hovered_province = provs.iter_mut().find(|&(_, &pos, _)| pos == hovered_pos);
+    let hovered_prov = provs
+        .iter_mut()
+        .find(|&(_, prov, _)| prov.pos == hovered_pos);
 
-    if let Some((id, _, mut material)) = hovered_province {
+    if let Some((id, _, mut material)) = hovered_prov {
         let color = materials.get(material.id()).unwrap().color;
         let color = multiple(color.to_linear(), COLOR_CHANGE_FACTOR);
         let color = Color::LinearRgba(color);

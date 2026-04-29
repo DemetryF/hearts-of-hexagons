@@ -1,7 +1,5 @@
 mod interface;
 
-use std::iter::zip;
-
 pub use interface::*;
 
 use {
@@ -14,59 +12,46 @@ const SIDE: f32 = 5.;
 
 #[derive(Default, Resource, Clone)]
 pub struct Map {
-    pub provinces: HashMap<HexagonPos, Province>,
+    pub provs: HashMap<HexagonPos, Entity>,
 }
 
-#[derive(Clone)]
+#[derive(Component)]
 pub struct Province {
-    pub control: Option<Entity>,
+    pub pos: HexagonPos,
 }
+
+#[derive(Component, Clone, Copy, PartialEq, Eq)]
+pub struct Owner(pub Option<Entity>);
 
 #[derive(Component, PartialEq, Eq)]
 pub struct Border {
     between: [HexagonPos; 2],
 }
 
-pub fn setup_provinces_meshes(
-    mut commands: Commands,
+impl Border {
+    pub fn new(a: HexagonPos, b: HexagonPos) -> Self {
+        Self { between: [a, b] }
+    }
+}
+
+pub fn setup_provs_meshes(
+    countries: Query<&Country>,
+    provs: Query<(Entity, &Province, &Owner)>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    countries: Query<&Country>,
-    map: Res<Map>,
+    mut commands: Commands,
 ) {
     let mesh = meshes.add(RegularPolygon::new(SIDE, 6));
 
-    for (&hpos, province) in &map.provinces {
-        let pos = hpos.real_regular(SIDE);
-        let country = province.control.unwrap();
+    for (id, prov, owner) in provs {
+        let pos = prov.pos.real_regular(SIDE);
+        let country = owner.0.unwrap();
         let country = countries.get(country).unwrap();
-        let color = country.color;
 
-        commands.spawn((
+        commands.entity(id).insert((
             Mesh2d(mesh.clone()),
-            MeshMaterial2d(materials.add(color)),
+            MeshMaterial2d(materials.add(country.color)),
             Transform::from_xyz(pos.x, pos.y, 0.0).with_rotation(Quat::from_rotation_z(PI / 2.)),
-            hpos,
         ));
-
-        for (neighbour, side) in
-            zip(hpos.neighbours(), HexagonPos::ZERO.sides_regular(SIDE)).take(3)
-        {
-            let border = map
-                .provinces
-                .get(&neighbour)
-                .is_some_and(|neighbour| neighbour.control != province.control);
-
-            if border {
-                commands.spawn((
-                    Border {
-                        between: [hpos, neighbour],
-                    },
-                    Mesh2d(meshes.add(Segment2d::new(side.0, side.1))),
-                    MeshMaterial2d(materials.add(Color::WHITE)),
-                    Transform::from_xyz(pos.x, pos.y, 0.1),
-                ));
-            }
-        }
     }
 }
