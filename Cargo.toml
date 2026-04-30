@@ -16,7 +16,7 @@ opt-level = 3
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = { version = "0.18.1" }
+bevy = { version = "0.18.1", features = ["debug"] }
 image = "0.25.10"
 rand = "0.10.1"
 serde = "1.0.228"

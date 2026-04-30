@@ -1,7 +1,7 @@
 use {
     crate::{
         country::{Country, PlayingCountry},
-        plugins::HoveredProvince,
+        plugins::{HoveredProvince, Map, Owner},
     },
     bevy::{input_focus::InputFocus, prelude::*},
 };
@@ -35,7 +35,7 @@ pub struct UiMoneyLabel;
 pub struct UiBuyDivisionButton;
 
 #[derive(Component)]
-pub struct UiProvInfo;
+pub struct UiProvInfoNode;
 
 #[derive(Component)]
 pub struct UiProvCoords;
@@ -120,8 +120,8 @@ fn buy_division_button(
 }
 
 fn update_country_info(
-    country: Option<Single<&Country, With<PlayingCountry>>>,
     money_label: Option<Single<&mut Text, With<UiMoneyLabel>>>,
+    country: Option<Single<&Country, With<PlayingCountry>>>,
 ) {
     let Some(country) = country else {
         return;
@@ -134,7 +134,7 @@ fn update_country_info(
 
 fn init_hovered_prov_info(mut commands: Commands) {
     commands.spawn((
-        UiProvInfo,
+        UiProvInfoNode,
         Node {
             position_type: PositionType::Absolute,
             left: px(0),
@@ -154,18 +154,33 @@ fn init_hovered_prov_info(mut commands: Commands) {
         },
         Visibility::Hidden,
         BackgroundColor(BACKGROUND_COLOR),
-        children![Text::new("Province"), (Text::new(""), UiProvCoords)],
+        children![
+            Text::new("Province"),
+            (
+                Text::new(""),
+                UiProvCoords,
+                TextLayout::new_with_justify(Justify::Center)
+            ),
+        ],
     ));
 }
 
 fn update_hovered_prov_info(
-    vis: Single<&mut Visibility, With<UiProvInfo>>,
-    mut label: Single<&mut Text, With<UiProvCoords>>,
+    mut coords_label: Single<&mut Text, With<UiProvCoords>>,
+    vis: Single<&mut Visibility, With<UiProvInfoNode>>,
+    owners: Query<&Owner>,
+    countries: Query<&Country>,
+    map: Res<Map>,
     hovered: Res<HoveredProvince>,
 ) {
     if let Some(hovered) = hovered.0 {
         *vis.into_inner() = Visibility::Visible;
-        label.0 = format!("({}, {})", hovered.x, hovered.y);
+
+        let prov = map.provs[&hovered];
+        let owner = owners.get(prov).unwrap();
+        let country = countries.get(owner.0.unwrap()).unwrap();
+
+        coords_label.0 = format!("({}, {})\n:owner: {}", hovered.x, hovered.y, country.name);
     } else {
         *vis.into_inner() = Visibility::Hidden;
     };
