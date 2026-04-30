@@ -3,6 +3,14 @@ use bevy::{
     prelude::*,
 };
 
+pub struct ControlsPlugin;
+
+impl Plugin for ControlsPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(FixedUpdate, (camera_movement, camera_zoom));
+    }
+}
+
 const MOVING_SPEED: f32 = 450.0;
 const MOVE_FIELD_SIZE: f32 = 100.;
 

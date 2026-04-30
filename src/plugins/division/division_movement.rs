@@ -1,7 +1,7 @@
 use {
     crate::{
-        components::{Division, HoveredProvince, Map, SelectedDivision},
         hexagon_pos::HexagonPos,
+        plugins::{Division, HoveredProvince, Map, SelectedDivision, Tick},
     },
     bevy::prelude::*,
     std::{
@@ -12,26 +12,21 @@ use {
 
 const PROV_DISTANCE: usize = 1;
 
+pub struct DivisionMovementPlugin;
+
+impl Plugin for DivisionMovementPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Update, (create_moving_order, calculate_path, end_moving))
+            .add_systems(Tick, process_moving);
+    }
+}
+
 #[derive(Component)]
 pub struct MovingOrder {
     pub to: HexagonPos,
 }
 
-#[derive(Component)]
-pub struct Path {
-    pub provs: Vec<HexagonPos>,
-    pub progress: usize,
-}
-
-#[derive(EntityEvent)]
-pub struct DivisionMoved {
-    pub entity: Entity,
-
-    pub from: HexagonPos,
-    pub to: HexagonPos,
-}
-
-pub fn start_moving(
+fn create_moving_order(
     selected: Option<Single<Entity, With<SelectedDivision>>>,
     hovered_prov: Res<HoveredProvince>,
     input: Res<ButtonInput<MouseButton>>,
@@ -41,7 +36,7 @@ pub fn start_moving(
         && let Some(hovered) = hovered_prov.0
         && let Some(selected) = selected
     {
-        println!("start moving");
+        println!("created moving order");
 
         commands
             .entity(*selected)
@@ -51,7 +46,13 @@ pub fn start_moving(
     }
 }
 
-pub fn calculate_path(
+#[derive(Component)]
+pub struct Path {
+    pub provs: Vec<HexagonPos>,
+    pub progress: usize,
+}
+
+fn calculate_path(
     division: Option<Single<(Entity, &Division, &MovingOrder), Changed<MovingOrder>>>,
     map: Res<Map>,
     mut commands: Commands,
@@ -133,10 +134,7 @@ pub fn calculate_path(
     println!("couldnt find path");
 }
 
-pub fn process_moving(
-    divisions: Query<(Entity, &mut Path, &mut Division)>,
-    mut commands: Commands,
-) {
+fn process_moving(divisions: Query<(Entity, &mut Path, &mut Division)>, mut commands: Commands) {
     for (entity, mut path, mut division) in divisions {
         path.progress += 1;
 
@@ -155,7 +153,15 @@ pub fn process_moving(
     }
 }
 
-pub fn end_moving(divisions: Query<(Entity, &Path)>, mut commands: Commands) {
+#[derive(EntityEvent)]
+pub struct DivisionMoved {
+    pub entity: Entity,
+
+    pub from: HexagonPos,
+    pub to: HexagonPos,
+}
+
+fn end_moving(divisions: Query<(Entity, &Path)>, mut commands: Commands) {
     for (id, path) in divisions {
         if path.provs.is_empty() {
             commands.entity(id).remove::<(Path, MovingOrder)>();

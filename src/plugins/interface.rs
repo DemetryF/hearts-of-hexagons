@@ -1,5 +1,8 @@
 use {
-    crate::components::{Country, HoveredProvince, PlayingCountry},
+    crate::{
+        country::{Country, PlayingCountry},
+        plugins::HoveredProvince,
+    },
     bevy::{input_focus::InputFocus, prelude::*},
 };
 
@@ -8,6 +11,22 @@ const BACKGROUND_COLOR: Color = Color::linear_rgba(0.3, 0.3, 0.3, 0.4);
 const BUTTON_NORMAL_COLOR: Color = Color::linear_rgb(0.4, 0.4, 0.4);
 const BUTTON_HOVERED_COLOR: Color = Color::linear_rgb(0.43, 0.43, 0.43);
 const BUTTON_PRESSED_COLOR: Color = Color::linear_rgb(0.46, 0.46, 0.46);
+
+pub struct InterfacePlugin;
+
+impl Plugin for InterfacePlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Startup, (display_country_info, init_hovered_prov_info))
+            .add_systems(
+                Update,
+                (
+                    buy_division_button,
+                    update_country_info,
+                    update_hovered_prov_info,
+                ),
+            );
+    }
+}
 
 #[derive(Component)]
 pub struct UiMoneyLabel;
@@ -21,7 +40,7 @@ pub struct UiProvInfo;
 #[derive(Component)]
 pub struct UiProvCoords;
 
-pub fn display_country_info(
+fn display_country_info(
     country: Option<Single<&Country, With<PlayingCountry>>>,
     mut commands: Commands,
 ) {
@@ -73,7 +92,7 @@ pub fn display_country_info(
     ));
 }
 
-pub fn buy_division_button(
+fn buy_division_button(
     mut input_focus: ResMut<InputFocus>,
     query: Query<
         (Entity, &Interaction, &mut BackgroundColor, &mut Button),
@@ -100,7 +119,7 @@ pub fn buy_division_button(
     }
 }
 
-pub fn update_country_info(
+fn update_country_info(
     country: Option<Single<&Country, With<PlayingCountry>>>,
     money_label: Option<Single<&mut Text, With<UiMoneyLabel>>>,
 ) {
@@ -113,7 +132,7 @@ pub fn update_country_info(
     money_label.0 = format!("{}\nmoney: {}", country.name, country.money);
 }
 
-pub fn init_hovered_prov_info(mut commands: Commands) {
+fn init_hovered_prov_info(mut commands: Commands) {
     commands.spawn((
         UiProvInfo,
         Node {
@@ -139,7 +158,7 @@ pub fn init_hovered_prov_info(mut commands: Commands) {
     ));
 }
 
-pub fn update_hovered_prov_info(
+fn update_hovered_prov_info(
     vis: Single<&mut Visibility, With<UiProvInfo>>,
     mut label: Single<&mut Text, With<UiProvCoords>>,
     hovered: Res<HoveredProvince>,

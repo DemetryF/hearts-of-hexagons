@@ -1,14 +1,27 @@
-mod interface;
-mod movement;
+mod division_mesh;
+mod division_movement;
+mod division_selection;
 
-pub use {interface::*, movement::*};
+pub use {division_mesh::*, division_movement::*, division_selection::*};
 
 use {
-    crate::{components::Country, hexagon_pos::HexagonPos},
+    crate::{country::Country, hexagon_pos::HexagonPos, plugins::Tick},
     bevy::prelude::*,
 };
 
 const REGENERATION_COST: usize = 20;
+
+pub struct DivisionPlugin;
+
+impl Plugin for DivisionPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Tick, regenerate_division).add_plugins((
+            DivisionMeshPlugin,
+            DivisionSelectionPlugin,
+            DivisionMovementPlugin,
+        ));
+    }
+}
 
 #[derive(Component)]
 pub struct Division {
@@ -24,7 +37,7 @@ pub struct Division {
 }
 
 // limit speed of regeneration
-pub fn regenerate_division(divisions: Query<&mut Division>, mut countries: Query<&mut Country>) {
+fn regenerate_division(divisions: Query<&mut Division>, mut countries: Query<&mut Country>) {
     for mut division in divisions {
         if division.hp == division.max_hp {
             continue;

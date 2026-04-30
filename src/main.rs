@@ -1,78 +1,33 @@
 use {
     crate::{
-        components::{
-            Country, Division, DivisionsAtProvince, Highlighted, HoveredProvince, Map, Owner,
-            PlayingCountry, Province, calculate_path, cancel_selection, capture, draw_selection,
-            end_moving, init_division_mesh, process_moving, regenerate_division, select_division,
-            setup_provs_meshes, start_moving, undraw_selection, unhighlight, update_borders,
-            update_divisions_mesh, update_highlighted, update_hovered, update_prov_color,
-        },
+        country::{Country, PlayingCountry},
         hexagon_pos::HexagonPos,
-        systems::{
-            buy_division_button, camera_movement, camera_zoom, display_country_info, gain_money,
-            init_hovered_prov_info, update_country_info, update_hovered_prov_info,
-        },
-        tick::{Tick, run_tick, setup_ticks},
+        plugins::*,
     },
     bevy::{input_focus::InputFocus, prelude::*},
     serde::Deserialize,
     std::{collections::HashMap, fs},
 };
 
-mod components;
+mod country;
 mod hexagon_pos;
-mod systems;
-mod tick;
+mod plugins;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_systems(
-            Startup,
-            (
-                (
-                    setup,
-                    init_map_n_countries,
-                    setup_provs_meshes,
-                    setup_playing_country,
-                    display_country_info,
-                    init_hovered_prov_info,
-                    init_division_mesh,
-                )
-                    .chain(),
-                setup_ticks,
-            ),
+            PreStartup,
+            ((setup, init_map_n_countries, setup_playing_country).chain(),),
         )
-        .add_systems(
-            Update,
-            (
-                run_tick,
-                select_division,
-                update_hovered,
-                cancel_selection,
-                regenerate_division,
-                start_moving,
-                calculate_path,
-                end_moving,
-                buy_division_button,
-                update_hovered_prov_info,
-                update_borders,
-                update_prov_color,
-                (unhighlight, update_highlighted)
-                    .chain()
-                    .run_if(resource_changed::<HoveredProvince>),
-            ),
-        )
-        .add_systems(FixedUpdate, (camera_zoom, camera_movement))
-        .add_systems(Tick, (gain_money, update_country_info, process_moving))
-        .add_observer(undraw_selection)
-        .add_observer(draw_selection)
-        .add_observer(update_divisions_mesh)
-        .add_observer(capture)
-        .insert_resource(Map::default())
-        .insert_resource(DivisionsAtProvince::default())
-        .insert_resource(Highlighted::default())
-        .insert_resource(HoveredProvince::default())
+        .add_plugins((
+            DivisionPlugin,
+            ProvincePlugin,
+            ControlsPlugin,
+            InterfacePlugin,
+            EconomyPlugin,
+            TickPlugin,
+        ))
         .init_resource::<InputFocus>()
         .run();
 }
