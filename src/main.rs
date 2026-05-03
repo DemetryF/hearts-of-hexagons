@@ -21,6 +21,7 @@ fn main() {
             ((setup, init_map_n_countries, setup_playing_country).chain(),),
         )
         .add_plugins((
+            BattlePlugin,
             DivisionPlugin,
             ProvincePlugin,
             ControlsPlugin,
@@ -37,44 +38,45 @@ fn setup(mut commands: Commands) {
 }
 
 fn setup_playing_country(mut commands: Commands, countries: Query<(&Country, Entity)>) {
-    for (country, id) in countries {
-        if &country.name == "Germany" {
-            commands.entity(id).insert(PlayingCountry);
-            println!("playing country is Germany");
+    let (_, id) = (countries.into_iter())
+        .find(|(country, _)| &country.name == "Germany")
+        .unwrap();
 
-            commands.spawn(Division {
-                hp: 100,
-                max_hp: 120,
-                attack: 10,
-                defend: 10,
-                speed: 10.,
-                pos: HexagonPos { x: 32, y: -41 },
-                country: id,
-            });
+    commands.entity(id).insert(PlayingCountry);
 
-            commands.spawn(Division {
-                hp: 100,
-                max_hp: 120,
-                attack: 10,
-                defend: 10,
-                speed: 10.,
-                pos: HexagonPos { x: 32, y: -41 },
-                country: id,
-            });
+    println!("playing country is Germany");
 
-            commands.spawn(Division {
-                hp: 100,
-                max_hp: 120,
-                attack: 10,
-                defend: 10,
-                speed: 10.,
-                pos: HexagonPos { x: 32, y: -41 },
-                country: id,
-            });
+    commands
+        .spawn(Division {
+            organization: 40.,
+            max_organization: 40.,
+            hp: 100.,
+            max_hp: 120.,
+            speed: 10.,
+            pos: HexagonPos { x: 32, y: -41 },
+            country: id,
+        })
+        .insert(CombatStats {
+            attack: 10.,
+            defend: 10.,
+            breakthrough: 10.,
+        });
 
-            break;
-        }
-    }
+    commands
+        .spawn(Division {
+            organization: 40.,
+            max_organization: 40.,
+            hp: 100.,
+            max_hp: 120.,
+            speed: 10.,
+            pos: HexagonPos { x: 32, y: -41 },
+            country: id,
+        })
+        .insert(CombatStats {
+            attack: 10.,
+            defend: 10.,
+            breakthrough: 10.,
+        });
 }
 
 fn init_map_n_countries(mut commands: Commands, mut map: ResMut<Map>) {

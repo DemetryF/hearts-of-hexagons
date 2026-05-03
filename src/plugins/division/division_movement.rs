@@ -17,6 +17,7 @@ pub struct DivisionMovementPlugin;
 impl Plugin for DivisionMovementPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, (create_moving_order, calculate_path, end_moving))
+            .add_systems(Last, clear_movement_block)
             .add_systems(Tick, process_moving);
     }
 }
@@ -134,8 +135,26 @@ fn calculate_path(
     println!("couldnt find path");
 }
 
-fn process_moving(divisions: Query<(Entity, &mut Path, &mut Division)>, mut commands: Commands) {
-    for (entity, mut path, mut division) in divisions {
+#[derive(EntityEvent)]
+pub struct DivisionMoved {
+    pub entity: Entity,
+
+    pub from: HexagonPos,
+    pub to: HexagonPos,
+}
+
+#[derive(Component, Default)]
+pub struct MovementBlock;
+
+fn process_moving(
+    divisions: Query<(Entity, &mut Path, &mut Division, Option<&MovementBlock>)>,
+    mut commands: Commands,
+) {
+    for (entity, mut path, mut division, movement_block) in divisions {
+        if movement_block.is_some() {
+            continue;
+        }
+
         path.progress += 1;
 
         if path.progress == PROV_DISTANCE {
@@ -153,12 +172,10 @@ fn process_moving(divisions: Query<(Entity, &mut Path, &mut Division)>, mut comm
     }
 }
 
-#[derive(EntityEvent)]
-pub struct DivisionMoved {
-    pub entity: Entity,
-
-    pub from: HexagonPos,
-    pub to: HexagonPos,
+fn clear_movement_block(blocked: Query<Entity, With<MovementBlock>>, mut commands: Commands) {
+    for id in blocked {
+        commands.entity(id).remove::<MovementBlock>();
+    }
 }
 
 fn end_moving(divisions: Query<(Entity, &Path)>, mut commands: Commands) {

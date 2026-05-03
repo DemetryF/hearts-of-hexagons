@@ -25,15 +25,22 @@ impl Plugin for DivisionPlugin {
 
 #[derive(Component)]
 pub struct Division {
-    pub hp: usize,
-    pub max_hp: usize,
+    pub organization: f32,
+    pub max_organization: f32,
+    pub hp: f32,
+    pub max_hp: f32,
 
-    pub attack: usize,
-    pub defend: usize,
     pub speed: f32,
 
     pub pos: HexagonPos,
     pub country: Entity,
+}
+
+#[derive(Component)]
+pub struct CombatStats {
+    pub attack: f32,
+    pub defend: f32,
+    pub breakthrough: f32,
 }
 
 // limit speed of regeneration
@@ -48,8 +55,8 @@ fn regenerate_division(divisions: Query<&mut Division>, mut countries: Query<&mu
         let missing_hp = division.max_hp - division.hp;
         let can_regenerate = country.money / REGENERATION_COST;
 
-        let regenerate = usize::min(can_regenerate, missing_hp);
-        let regeneration_cost = regenerate * REGENERATION_COST;
+        let regenerate = f32::min(can_regenerate as f32, missing_hp);
+        let regeneration_cost = (regenerate * REGENERATION_COST as f32) as usize;
 
         division.hp += regenerate;
         country.money -= regeneration_cost;
