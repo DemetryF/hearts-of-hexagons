@@ -64,7 +64,7 @@ fn update_division_mesh(
     for (division, mut transform) in affected_divisions {
         let divisions_at_the_prov = divisions_at_prov.0[&division.pos];
 
-        let pos = division.pos.real_regular(5.);
+        let pos = division.pos.real_regular(SIDE);
         let shift = Vec2::new(0., 3. * divisions_at_the_prov as f32);
 
         (divisions_at_prov.0)

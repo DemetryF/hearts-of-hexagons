@@ -1,7 +1,7 @@
 use {
     bevy::math::Vec2,
     serde::Serialize,
-    std::{f32::consts::PI, ops::Add},
+    std::{f32::consts::PI, iter::zip, ops::Add},
 };
 
 #[derive(Clone, Copy, Hash, PartialEq, Eq, Serialize)]
@@ -63,6 +63,22 @@ impl HexagonPos {
         let cos = (PI / 6.0).cos();
 
         self.sides(2. * side, side * cos * 2., side)
+    }
+
+    pub fn side_between_regular(self, other: Self, side: f32) -> (Vec2, Vec2) {
+        let cos = (PI / 6.0).cos();
+
+        self.side_between(other, 2. * side, side * cos * 2., side)
+    }
+
+    pub fn side_between(self, other: Self, width: f32, height: f32, side: f32) -> (Vec2, Vec2) {
+        for (neighbor, side) in zip(self.neighbours(), self.sides(width, height, side)) {
+            if neighbor == other {
+                return side;
+            }
+        }
+
+        panic!("self and other should be neighbours!")
     }
 
     pub fn sides(self, width: f32, height: f32, side: f32) -> [(Vec2, Vec2); 6] {
