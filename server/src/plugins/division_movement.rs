@@ -1,5 +1,6 @@
 use {
     crate::{
+        Players,
         map::Map,
         plugins::tick::{PostTick, Tick},
     },
@@ -24,8 +25,21 @@ impl Plugin for DivisionMovementPlugin {
     }
 }
 
-fn moving_order(event: On<FromClient<MovingOrder>>, mut commands: Commands) {
-    println!("moving order");
+fn moving_order(
+    event: On<FromClient<MovingOrder>>,
+    divisions: Query<&Division>,
+    players: ResMut<Players>,
+    mut commands: Commands,
+) {
+    let client = event.client_id.entity().unwrap();
+    let country = players.0[&client];
+    let division = event.entity;
+
+    let division = divisions.get(division).unwrap();
+
+    if division.country != country {
+        return;
+    }
 
     commands
         .entity(event.entity)
@@ -42,8 +56,6 @@ fn calculate_path(
     let Some((id, division, order)) = division.map(|d| d.into_inner()) else {
         return;
     };
-
-    println!("calculate path");
 
     #[derive(Clone, Copy, PartialEq, Eq)]
     struct QueueElement(i32, HexagonPos);
@@ -134,8 +146,6 @@ pub fn process_moving(
 
         if path.progress == PROV_DISTANCE {
             path.progress = 0;
-
-            println!("moved");
 
             let from = division.pos;
 

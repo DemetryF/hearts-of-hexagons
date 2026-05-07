@@ -17,7 +17,8 @@ pub struct DivisionMoved {
     pub to: HexagonPos,
 }
 
-#[derive(Event, Serialize, Deserialize)]
+#[derive(Event, Serialize, Deserialize, MapEntities, Clone)]
 pub struct CountryAssignment {
+    #[entities]
     pub entity: Entity,
 }

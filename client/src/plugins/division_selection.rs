@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 use shared::*;
 
+use crate::PlayingCountry;
+
 pub struct DivisionSelectionPlugin;
 
 impl Plugin for DivisionSelectionPlugin {
@@ -16,9 +18,10 @@ pub struct SelectedDivision;
 
 fn select_division(
     selected: Option<Single<Entity, With<SelectedDivision>>>,
-    divisions: Query<(Entity, &GlobalTransform), With<Division>>,
+    divisions: Query<(Entity, &GlobalTransform, &Division), With<Division>>,
     camera: Single<(&Camera, &GlobalTransform)>,
     window: Single<&Window>,
+    playing_country: Res<PlayingCountry>,
     mouse: Res<ButtonInput<MouseButton>>,
     mut commands: Commands,
 ) {
@@ -35,10 +38,10 @@ fn select_division(
         return;
     };
 
-    let Some((id, _)) = divisions.iter().find(|(_, transform)| {
+    let Some((id, _, _)) = divisions.iter().find(|(_, transform, division)| {
         let rect = Rect::from_center_size(transform.translation().xy(), Vec2::new(4., 2.5));
 
-        rect.contains(cursor)
+        rect.contains(cursor) && division.country == playing_country.0.unwrap()
     }) else {
         return;
     };

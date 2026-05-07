@@ -6,3 +6,4 @@ resolver = "2"
 opt-level = 0
 
 [profile.dev.package."*"]
+opt-level = 3
