@@ -1,9 +1,7 @@
 use {
-    crate::{
-        country::Country,
-        plugins::{Owner, Tick},
-    },
+    crate::plugins::tick::Tick,
     bevy::prelude::*,
+    shared::{Country, Owner},
 };
 
 pub struct EconomyPlugin;
@@ -14,7 +12,7 @@ impl Plugin for EconomyPlugin {
     }
 }
 
-pub const MONEY_PER_HOUR: usize = 1;
+const MONEY_PER_HOUR: usize = 1;
 
 /// Every hour every province produces `MONEY_PER_HOUR` for its owner
 fn gain_money(provs: Query<&Owner>, mut countries: Query<&mut Country>) {

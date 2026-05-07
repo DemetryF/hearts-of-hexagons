@@ -1,38 +1,32 @@
 use {
     crate::{
-        hexagon_pos::HexagonPos,
-        plugins::{CombatStats, Division, Map, MovementBlock, MovingOrder, Owner, Path, Tick},
+        map::Map,
+        plugins::{PreTick, Tick, process_moving},
     },
     bevy::prelude::*,
     rand::seq::IteratorRandom,
     rand_distr::{Binomial, Distribution},
+    shared::*,
 };
 
 pub struct BattlePlugin;
 
 impl Plugin for BattlePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
+        app.add_systems(PreTick, trigger_attack).add_systems(
             Tick,
             (
-                trigger_attack,
                 apply_attacks,
                 apply_defends,
                 stop_attack,
                 retreat,
                 clear_attacks_defends,
             )
-                .chain(),
+                .chain()
+                .before(process_moving),
         );
     }
 }
-
-#[derive(Component)]
-#[require(MovementBlock)]
-struct AttacksOn(HexagonPos);
-
-#[derive(Component)]
-struct DefendsFrom(HexagonPos);
 
 fn trigger_attack(
     moving_divisions: Query<(Entity, &Division, &Path)>,
@@ -50,6 +44,7 @@ fn trigger_attack(
 
         if divs_at_dst.peek().is_some() {
             commands.entity(id).insert(AttacksOn(dst));
+            println!("trigger attack");
         }
 
         for (id, _) in divs_at_dst {
@@ -63,6 +58,8 @@ fn apply_attacks(
     mut divisions: Query<(&mut Division, &CombatStats)>,
 ) {
     for (&AttacksOn(dst), &CombatStats { attack, .. }) in attacking {
+        println!("apply attacks");
+
         let defenders = divisions.iter_mut().filter(|(d, _)| d.pos == dst);
 
         let (mut attacked, &CombatStats { defend, .. }) =
@@ -154,7 +151,9 @@ fn retreat(
                 continue;
             }
 
-            commands.entity(id).insert(MovingOrder { to: neighbor });
+            commands
+                .entity(id)
+                .insert(MovingOrderComponent { to: neighbor });
 
             break;
         }

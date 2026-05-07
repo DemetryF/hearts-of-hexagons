@@ -1,10 +1,7 @@
-use {
-    crate::{
-        hexagon_pos::HexagonPos,
-        plugins::{Map, Owner, Province, SIDE},
-    },
-    bevy::prelude::*,
-};
+use bevy::prelude::*;
+use shared::*;
+
+use crate::plugins::{Map, SIDE};
 
 pub struct BorderPlugin;
 

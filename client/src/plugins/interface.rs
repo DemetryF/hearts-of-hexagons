@@ -1,9 +1,10 @@
 use {
     crate::{
-        country::{Country, PlayingCountry},
-        plugins::{HoveredProvince, Map, Owner},
+        PlayingCountry,
+        plugins::{HoveredProvince, Map},
     },
     bevy::{input_focus::InputFocus, prelude::*},
+    shared::*,
 };
 
 const BACKGROUND_COLOR: Color = Color::linear_rgba(0.3, 0.3, 0.3, 0.4);
@@ -12,9 +13,9 @@ const BUTTON_NORMAL_COLOR: Color = Color::linear_rgb(0.4, 0.4, 0.4);
 const BUTTON_HOVERED_COLOR: Color = Color::linear_rgb(0.43, 0.43, 0.43);
 const BUTTON_PRESSED_COLOR: Color = Color::linear_rgb(0.46, 0.46, 0.46);
 
-pub struct InterfacePlugin;
+pub struct UiPlugin;
 
-impl Plugin for InterfacePlugin {
+impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, (display_country_info, init_hovered_prov_info))
             .add_systems(
@@ -40,16 +41,7 @@ pub struct UiProvInfoNode;
 #[derive(Component)]
 pub struct UiProvCoords;
 
-fn display_country_info(
-    country: Option<Single<&Country, With<PlayingCountry>>>,
-    mut commands: Commands,
-) {
-    let Some(country) = country else {
-        return;
-    };
-
-    println!("display country info");
-
+fn display_country_info(mut commands: Commands) {
     commands.spawn((
         Node {
             width: percent(20),
@@ -65,7 +57,7 @@ fn display_country_info(
         children![
             (
                 UiMoneyLabel,
-                Text::new(format!("{}\nmoney: {}\n", country.name, country.money)),
+                Text::new(""),
                 TextLayout::new_with_justify(Justify::Center),
                 Node {
                     margin: UiRect::bottom(px(10)),
@@ -121,9 +113,10 @@ fn buy_division_button(
 
 fn update_country_info(
     money_label: Option<Single<&mut Text, With<UiMoneyLabel>>>,
-    country: Option<Single<&Country, With<PlayingCountry>>>,
+    playing_country: Res<PlayingCountry>,
+    countries: Query<&Country>,
 ) {
-    let Some(country) = country else {
+    let Some(country) = playing_country.0.map(|id| countries.get(id).unwrap()) else {
         return;
     };
 
@@ -180,7 +173,7 @@ fn update_hovered_prov_info(
         let owner = owners.get(prov).unwrap();
         let country = countries.get(owner.0.unwrap()).unwrap();
 
-        coords_label.0 = format!("({}, {})\n:owner: {}", hovered.x, hovered.y, country.name);
+        coords_label.0 = format!("({}, {})\nowner: {}", hovered.x, hovered.y, country.name);
     } else {
         *vis.into_inner() = Visibility::Hidden;
     };

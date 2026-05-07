@@ -4,12 +4,8 @@ mod province_hovering;
 pub use {border::*, province_hovering::*};
 
 use {
-    crate::{
-        country::Country,
-        hexagon_pos::HexagonPos,
-        plugins::{Division, DivisionMoved},
-    },
     bevy::prelude::*,
+    shared::*,
     std::{collections::HashMap, f32::consts::PI},
 };
 
@@ -20,9 +16,7 @@ pub struct ProvincePlugin;
 impl Plugin for ProvincePlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<Map>()
-            .add_systems(Startup, setup_provs_meshes)
-            .add_systems(Update, update_prov_color)
-            .add_observer(capture)
+            .add_systems(Update, (update_prov_color, setup_provs_meshes))
             .add_plugins((BorderPlugin, ProvinceHoveringPlugin));
     }
 }
@@ -32,17 +26,9 @@ pub struct Map {
     pub provs: HashMap<HexagonPos, Entity>,
 }
 
-#[derive(Component)]
-pub struct Province {
-    pub pos: HexagonPos,
-}
-
-#[derive(Component, Clone, Copy, PartialEq, Eq)]
-pub struct Owner(pub Option<Entity>);
-
-pub fn setup_provs_meshes(
+fn setup_provs_meshes(
+    provs: Query<(Entity, &Province, &Owner), Without<Mesh2d>>,
     countries: Query<&Country>,
-    provs: Query<(Entity, &Province, &Owner)>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut commands: Commands,
@@ -62,30 +48,17 @@ pub fn setup_provs_meshes(
     }
 }
 
-pub fn capture(
-    event: On<DivisionMoved>,
-    divisions: Query<&Division>,
-    mut provs: Query<&mut Owner>,
-    map: ResMut<Map>,
-) {
-    let country = divisions.get(event.event_target()).unwrap().country;
-
-    let captured_id = map.provs[&event.to];
-    let mut captured_owner = provs.get_mut(captured_id).unwrap();
-
-    if captured_owner.0 != Some(country) {
-        captured_owner.0 = Some(country);
-    }
-}
-
-pub fn update_prov_color(
+fn update_prov_color(
     provs: Query<(Entity, &Owner), Changed<Owner>>,
     countries: Query<&Country>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut commands: Commands,
 ) {
     for (id, owner) in provs {
-        let color = countries.get(owner.0.unwrap()).unwrap().color;
+        let color = countries
+            .get(owner.0.unwrap())
+            .map(|country| country.color)
+            .unwrap_or(Color::BLACK);
 
         commands
             .entity(id)

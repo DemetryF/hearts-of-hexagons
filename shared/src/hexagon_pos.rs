@@ -1,10 +1,10 @@
 use {
     bevy::math::Vec2,
-    serde::Serialize,
+    serde::{Deserialize, Serialize},
     std::{f32::consts::PI, iter::zip, ops::Add},
 };
 
-#[derive(Clone, Copy, Hash, PartialEq, Eq, Serialize)]
+#[derive(Clone, Copy, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HexagonPos {
     pub x: i32,
     pub y: i32,

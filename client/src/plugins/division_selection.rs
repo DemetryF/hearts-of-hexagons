@@ -1,4 +1,5 @@
-use {crate::plugins::Division, bevy::prelude::*};
+use bevy::prelude::*;
+use shared::*;
 
 pub struct DivisionSelectionPlugin;
 

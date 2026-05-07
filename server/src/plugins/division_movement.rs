@@ -1,9 +1,11 @@
 use {
     crate::{
-        hexagon_pos::HexagonPos,
-        plugins::{Division, HoveredProvince, Map, SelectedDivision, Tick},
+        map::Map,
+        plugins::tick::{PostTick, Tick},
     },
     bevy::prelude::*,
+    bevy_replicon::prelude::*,
+    shared::*,
     std::{
         cmp::Reverse,
         collections::{BinaryHeap, HashMap, HashSet},
@@ -16,51 +18,32 @@ pub struct DivisionMovementPlugin;
 
 impl Plugin for DivisionMovementPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (create_moving_order, calculate_path, end_moving))
-            .add_systems(Last, clear_movement_block)
-            .add_systems(Tick, process_moving);
+        app.add_systems(Tick, (calculate_path, process_moving, end_moving).chain())
+            .add_systems(PostTick, clear_movement_block)
+            .add_observer(moving_order);
     }
 }
 
-#[derive(Component)]
-pub struct MovingOrder {
-    pub to: HexagonPos,
-}
+fn moving_order(event: On<FromClient<MovingOrder>>, mut commands: Commands) {
+    println!("moving order");
 
-fn create_moving_order(
-    selected: Option<Single<Entity, With<SelectedDivision>>>,
-    hovered_prov: Res<HoveredProvince>,
-    input: Res<ButtonInput<MouseButton>>,
-    mut commands: Commands,
-) {
-    if input.just_pressed(MouseButton::Left)
-        && let Some(hovered) = hovered_prov.0
-        && let Some(selected) = selected
-    {
-        println!("created moving order");
-
-        commands
-            .entity(*selected)
-            .insert(MovingOrder { to: hovered });
-
-        commands.entity(*selected).remove::<SelectedDivision>();
-    }
-}
-
-#[derive(Component)]
-pub struct Path {
-    pub provs: Vec<HexagonPos>,
-    pub progress: usize,
+    commands
+        .entity(event.entity)
+        .insert(MovingOrderComponent { to: event.to });
 }
 
 fn calculate_path(
-    division: Option<Single<(Entity, &Division, &MovingOrder), Changed<MovingOrder>>>,
+    division: Option<
+        Single<(Entity, &Division, &MovingOrderComponent), Changed<MovingOrderComponent>>,
+    >,
     map: Res<Map>,
     mut commands: Commands,
 ) {
     let Some((id, division, order)) = division.map(|d| d.into_inner()) else {
         return;
     };
+
+    println!("calculate path");
 
     #[derive(Clone, Copy, PartialEq, Eq)]
     struct QueueElement(i32, HexagonPos);
@@ -135,18 +118,10 @@ fn calculate_path(
     println!("couldnt find path");
 }
 
-#[derive(EntityEvent)]
-pub struct DivisionMoved {
-    pub entity: Entity,
-
-    pub from: HexagonPos,
-    pub to: HexagonPos,
-}
-
 #[derive(Component, Default)]
 pub struct MovementBlock;
 
-fn process_moving(
+pub fn process_moving(
     divisions: Query<(Entity, &mut Path, &mut Division, Option<&MovementBlock>)>,
     mut commands: Commands,
 ) {
@@ -160,7 +135,10 @@ fn process_moving(
         if path.progress == PROV_DISTANCE {
             path.progress = 0;
 
+            println!("moved");
+
             let from = division.pos;
+
             division.pos = path.provs.pop().unwrap();
 
             commands.entity(entity).trigger(|entity| DivisionMoved {
@@ -181,7 +159,7 @@ fn clear_movement_block(blocked: Query<Entity, With<MovementBlock>>, mut command
 fn end_moving(divisions: Query<(Entity, &Path)>, mut commands: Commands) {
     for (id, path) in divisions {
         if path.provs.is_empty() {
-            commands.entity(id).remove::<(Path, MovingOrder)>();
+            commands.entity(id).remove::<(Path, MovingOrderComponent)>();
         }
     }
 }

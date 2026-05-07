@@ -1,10 +1,7 @@
 use {
-    crate::{
-        country::Country,
-        hexagon_pos::HexagonPos,
-        plugins::{Map, Owner, Province, SIDE},
-    },
+    crate::plugins::{Map, SIDE},
     bevy::prelude::*,
+    shared::*,
 };
 
 pub struct ProvinceHoveringPlugin;
