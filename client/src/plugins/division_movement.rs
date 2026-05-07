@@ -30,7 +30,7 @@ fn create_moving_order(
         && let Some(hovered) = hovered_prov.0
         && let Some(selected) = selected
     {
-        commands.client_trigger(MovingOrder {
+        commands.client_trigger(MovingOrderEvent {
             entity: *selected,
             to: hovered,
         });

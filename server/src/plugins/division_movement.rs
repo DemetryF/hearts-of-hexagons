@@ -2,7 +2,10 @@ use {
     crate::{
         Players,
         map::Map,
-        plugins::{tick::{PostTick, Tick}, trigger_attack},
+        plugins::{
+            tick::{PostTick, Tick},
+            trigger_attack,
+        },
     },
     bevy::prelude::*,
     bevy_replicon::prelude::*,
@@ -28,8 +31,13 @@ impl Plugin for DivisionMovementPlugin {
     }
 }
 
+#[derive(Component)]
+pub struct MovingOrder {
+    pub to: HexagonPos,
+}
+
 fn moving_order(
-    event: On<FromClient<MovingOrder>>,
+    event: On<FromClient<MovingOrderEvent>>,
     divisions: Query<&Division>,
     players: ResMut<Players>,
     mut commands: Commands,
@@ -46,13 +54,11 @@ fn moving_order(
 
     commands
         .entity(event.entity)
-        .insert(MovingOrderComponent { to: event.to });
+        .insert(MovingOrder { to: event.to });
 }
 
 fn calculate_path(
-    division: Option<
-        Single<(Entity, &Division, &MovingOrderComponent), Changed<MovingOrderComponent>>,
-    >,
+    division: Option<Single<(Entity, &Division, &MovingOrder), Changed<MovingOrder>>>,
     map: Res<Map>,
     mut commands: Commands,
 ) {
@@ -160,9 +166,7 @@ pub fn process_moving(
             });
 
             if path.provs.is_empty() {
-                commands
-                    .entity(entity)
-                    .remove::<(Path, MovingOrderComponent)>();
+                commands.entity(entity).remove::<(Path, MovingOrder)>();
             }
         }
     }

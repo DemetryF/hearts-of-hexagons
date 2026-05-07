@@ -3,7 +3,7 @@ use bevy::{ecs::entity::MapEntities, prelude::*};
 use serde::{Deserialize, Serialize};
 
 #[derive(Event, Serialize, Deserialize, MapEntities, Clone)]
-pub struct MovingOrder {
+pub struct MovingOrderEvent {
     #[entities]
     pub entity: Entity,
     pub to: HexagonPos,

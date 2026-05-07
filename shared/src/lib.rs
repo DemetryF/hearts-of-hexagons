@@ -22,7 +22,7 @@ impl Plugin for ProtocolPlugin {
             .replicate::<MovementBlock>()
             .replicate::<AttacksOn>()
             .replicate::<DefendsFrom>()
-            .add_mapped_client_event::<MovingOrder>(Channel::Ordered)
+            .add_mapped_client_event::<MovingOrderEvent>(Channel::Ordered)
             .add_mapped_client_event::<CountryAssignment>(Channel::Ordered);
     }
 }
