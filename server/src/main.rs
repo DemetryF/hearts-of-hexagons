@@ -96,7 +96,7 @@ fn spawn_divisions(mut commands: Commands, countries: Query<(&Country, Entity)>)
             country: id,
         })
         .insert(CombatStats {
-            attack: 10.,
+            attack: 40.,
             defend: 10.,
             breakthrough: 10.,
         });
@@ -112,7 +112,7 @@ fn spawn_divisions(mut commands: Commands, countries: Query<(&Country, Entity)>)
             country: id,
         })
         .insert(CombatStats {
-            attack: 10.,
+            attack: 40.,
             defend: 10.,
             breakthrough: 10.,
         });
@@ -166,7 +166,7 @@ fn world_from_json() -> (HashMap<HexagonPos, [u8; 4]>, HashMap<[u8; 4], String>)
         countries: HashMap<String, [u8; 4]>,
     }
 
-    let data = fs::read_to_string("../countries.json").unwrap();
+    let data = fs::read_to_string("./countries.json").unwrap();
     let data: Data = serde_json::from_str(&data).unwrap();
 
     let countries: HashMap<[u8; 4], String> = data

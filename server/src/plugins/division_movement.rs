@@ -2,7 +2,7 @@ use {
     crate::{
         Players,
         map::Map,
-        plugins::tick::{PostTick, Tick},
+        plugins::{tick::{PostTick, Tick}, trigger_attack},
     },
     bevy::prelude::*,
     bevy_replicon::prelude::*,
@@ -19,9 +19,12 @@ pub struct DivisionMovementPlugin;
 
 impl Plugin for DivisionMovementPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Tick, (calculate_path, process_moving, end_moving).chain())
-            .add_systems(PostTick, clear_movement_block)
-            .add_observer(moving_order);
+        app.add_systems(
+            Tick,
+            (calculate_path.before(trigger_attack), process_moving).chain(),
+        )
+        .add_systems(PostTick, clear_movement_block)
+        .add_observer(moving_order);
     }
 }
 
@@ -130,14 +133,13 @@ fn calculate_path(
     println!("couldnt find path");
 }
 
-#[derive(Component, Default)]
-pub struct MovementBlock;
-
 pub fn process_moving(
     divisions: Query<(Entity, &mut Path, &mut Division, Option<&MovementBlock>)>,
     mut commands: Commands,
 ) {
     for (entity, mut path, mut division, movement_block) in divisions {
+        println!("process moving");
+
         if movement_block.is_some() {
             continue;
         }
@@ -156,20 +158,19 @@ pub fn process_moving(
                 from,
                 to: division.pos,
             });
+
+            if path.provs.is_empty() {
+                commands
+                    .entity(entity)
+                    .remove::<(Path, MovingOrderComponent)>();
+            }
         }
     }
 }
 
 fn clear_movement_block(blocked: Query<Entity, With<MovementBlock>>, mut commands: Commands) {
     for id in blocked {
+        println!("clear movement block");
         commands.entity(id).remove::<MovementBlock>();
-    }
-}
-
-fn end_moving(divisions: Query<(Entity, &Path)>, mut commands: Commands) {
-    for (id, path) in divisions {
-        if path.provs.is_empty() {
-            commands.entity(id).remove::<(Path, MovingOrderComponent)>();
-        }
     }
 }

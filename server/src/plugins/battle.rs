@@ -1,7 +1,7 @@
 use {
     crate::{
         map::Map,
-        plugins::{PreTick, Tick, process_moving},
+        plugins::{Tick, process_moving},
     },
     bevy::prelude::*,
     rand::seq::IteratorRandom,
@@ -13,9 +13,10 @@ pub struct BattlePlugin;
 
 impl Plugin for BattlePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(PreTick, trigger_attack).add_systems(
+        app.add_systems(
             Tick,
             (
+                trigger_attack,
                 apply_attacks,
                 apply_defends,
                 stop_attack,
@@ -28,7 +29,7 @@ impl Plugin for BattlePlugin {
     }
 }
 
-fn trigger_attack(
+pub fn trigger_attack(
     moving_divisions: Query<(Entity, &Division, &Path)>,
     divisions: Query<(Entity, &Division)>,
     mut commands: Commands,
@@ -139,6 +140,8 @@ fn retreat(
         if defending.organization > 0. {
             continue;
         }
+
+        println!("retreat");
 
         for neighbor in defending.pos.neighbours() {
             let Some(&prov) = map.provs.get(&neighbor) else {
