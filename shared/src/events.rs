@@ -18,7 +18,13 @@ pub struct DivisionMoved {
 }
 
 #[derive(Event, Serialize, Deserialize, MapEntities, Clone)]
-pub struct CountryAssignment {
+pub struct CountryAssignmentRequest {
     #[entities]
     pub entity: Entity,
+}
+
+#[derive(Event, Serialize, Deserialize, MapEntities, Clone)]
+pub enum CountryAssignmentResponse {
+    Success(#[entities] Entity),
+    CountryIsBusy,
 }

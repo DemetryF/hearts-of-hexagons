@@ -26,9 +26,10 @@ pub struct Map {
     pub provs: HashMap<HexagonPos, Entity>,
 }
 
-fn setup_provs_meshes(
+pub fn setup_provs_meshes(
     provs: Query<(Entity, &Province, &Owner), Without<Mesh2d>>,
     countries: Query<&Country>,
+    mut map: ResMut<Map>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut commands: Commands,
@@ -45,6 +46,8 @@ fn setup_provs_meshes(
             MeshMaterial2d(materials.add(country.color)),
             Transform::from_xyz(pos.x, pos.y, 0.0).with_rotation(Quat::from_rotation_z(PI / 2.)),
         ));
+
+        map.provs.insert(prov.pos, id);
     }
 }
 

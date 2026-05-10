@@ -8,9 +8,7 @@ use bevy_replicon_renet::{
     RenetChannelsExt, RenetServer, RepliconRenetPlugins, netcode::*, renet::ConnectionConfig,
 };
 use serde::Deserialize;
-use shared::{
-    CombatStats, Country, CountryAssignment, Division, HexagonPos, Owner, ProtocolPlugin, Province,
-};
+use shared::*;
 use std::{collections::HashMap, fs, net::UdpSocket, time::SystemTime};
 
 const PORT: u16 = 5000;
@@ -198,21 +196,26 @@ fn world_from_json() -> (HashMap<HexagonPos, [u8; 4]>, HashMap<[u8; 4], String>)
 #[derive(Resource, Default)]
 pub struct Players(pub HashMap<Entity, Entity>);
 
-// Todo add responds
 fn assign_country(
-    req: On<FromClient<CountryAssignment>>,
-    countries: Query<&Country>,
+    req: On<FromClient<CountryAssignmentRequest>>,
     mut players: ResMut<Players>,
+    mut commands: Commands,
 ) {
     let client = req.client_id.entity().unwrap();
     let country = req.message.entity;
 
-    if (players.0.values()).any(|&other_country| other_country == country) {
-        println!("attempt to assign busy country");
-        return;
-    }
+    let message = {
+        if (players.0.values()).any(|&other_country| other_country == country) {
+            CountryAssignmentResponse::CountryIsBusy
+        } else {
+            players.0.insert(client, country);
 
-    println!("assigned {}", &countries.get(country).unwrap().name);
+            CountryAssignmentResponse::Success(country)
+        }
+    };
 
-    players.0.insert(client, country);
+    commands.server_trigger(ToClients {
+        mode: SendMode::Direct(req.client_id),
+        message,
+    });
 }

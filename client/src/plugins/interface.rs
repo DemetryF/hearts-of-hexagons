@@ -1,6 +1,6 @@
 use {
     crate::{
-        PlayingCountry,
+        AppState, PlayingCountry,
         plugins::{HoveredProvince, Map},
     },
     bevy::{input_focus::InputFocus, prelude::*},
@@ -13,19 +13,23 @@ const BUTTON_NORMAL_COLOR: Color = Color::linear_rgb(0.4, 0.4, 0.4);
 const BUTTON_HOVERED_COLOR: Color = Color::linear_rgb(0.43, 0.43, 0.43);
 const BUTTON_PRESSED_COLOR: Color = Color::linear_rgb(0.46, 0.46, 0.46);
 
-pub struct UiPlugin;
+pub struct GameUiPlugin;
 
-impl Plugin for UiPlugin {
+impl Plugin for GameUiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, (display_country_info, init_hovered_prov_info))
-            .add_systems(
-                Update,
-                (
-                    buy_division_button,
-                    update_country_info,
-                    update_hovered_prov_info,
-                ),
-            );
+        app.add_systems(
+            OnEnter(AppState::Game),
+            (display_country_info, init_hovered_prov_info),
+        )
+        .add_systems(
+            Update,
+            (
+                buy_division_button,
+                update_country_info,
+                update_hovered_prov_info,
+            )
+                .run_if(in_state(AppState::Game)),
+        );
     }
 }
 

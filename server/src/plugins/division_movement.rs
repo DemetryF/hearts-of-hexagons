@@ -144,8 +144,6 @@ pub fn process_moving(
     mut commands: Commands,
 ) {
     for (entity, mut path, mut division, movement_block) in divisions {
-        println!("process moving");
-
         if movement_block.is_some() {
             continue;
         }
@@ -174,7 +172,6 @@ pub fn process_moving(
 
 fn clear_movement_block(blocked: Query<Entity, With<MovementBlock>>, mut commands: Commands) {
     for id in blocked {
-        println!("clear movement block");
         commands.entity(id).remove::<MovementBlock>();
     }
 }

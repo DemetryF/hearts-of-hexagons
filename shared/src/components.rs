@@ -41,7 +41,7 @@ pub struct CombatStats {
 }
 
 #[derive(Component, Serialize, Deserialize)]
-pub struct MovingOrderComponent {
+pub struct MovingOrder {
     pub to: HexagonPos,
 }
 

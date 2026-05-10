@@ -1,13 +1,16 @@
 use bevy::prelude::*;
 use shared::*;
 
-use crate::plugins::{Map, SIDE};
+use crate::plugins::{Map, SIDE, setup_provs_meshes};
 
 pub struct BorderPlugin;
 
 impl Plugin for BorderPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (update_borders, border_mesh).chain());
+        app.add_systems(
+            Update,
+            (update_borders.after(setup_provs_meshes), border_mesh).chain(),
+        );
     }
 }
 

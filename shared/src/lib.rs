@@ -23,6 +23,7 @@ impl Plugin for ProtocolPlugin {
             .replicate::<AttacksOn>()
             .replicate::<DefendsFrom>()
             .add_mapped_client_event::<MovingOrderEvent>(Channel::Ordered)
-            .add_mapped_client_event::<CountryAssignment>(Channel::Ordered);
+            .add_mapped_client_event::<CountryAssignmentRequest>(Channel::Ordered)
+            .add_mapped_server_event::<CountryAssignmentResponse>(Channel::Ordered);
     }
 }

@@ -45,7 +45,6 @@ pub fn trigger_attack(
 
         if divs_at_dst.peek().is_some() {
             commands.entity(id).insert(AttacksOn(dst));
-            println!("trigger attack");
         }
 
         for (id, _) in divs_at_dst {
@@ -59,8 +58,6 @@ fn apply_attacks(
     mut divisions: Query<(&mut Division, &CombatStats)>,
 ) {
     for (&AttacksOn(dst), &CombatStats { attack, .. }) in attacking {
-        println!("apply attacks");
-
         let defenders = divisions.iter_mut().filter(|(d, _)| d.pos == dst);
 
         let (mut attacked, &CombatStats { defend, .. }) =
@@ -141,8 +138,6 @@ fn retreat(
             continue;
         }
 
-        println!("retreat");
-
         for neighbor in defending.pos.neighbours() {
             let Some(&prov) = map.provs.get(&neighbor) else {
                 continue;
@@ -154,9 +149,7 @@ fn retreat(
                 continue;
             }
 
-            commands
-                .entity(id)
-                .insert(MovingOrderComponent { to: neighbor });
+            commands.entity(id).insert(MovingOrder { to: neighbor });
 
             break;
         }
