@@ -165,7 +165,7 @@ fn init_hovered_prov_info(mut commands: Commands) {
 fn update_hovered_prov_info(
     mut coords_label: Single<&mut Text, With<UiProvCoords>>,
     vis: Single<&mut Visibility, With<UiProvInfoNode>>,
-    owners: Query<&Owner>,
+    owners: Query<&ProvinceOwner>,
     countries: Query<&Country>,
     map: Res<Map>,
     hovered: Res<HoveredProvince>,

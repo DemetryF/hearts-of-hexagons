@@ -1,10 +1,11 @@
 mod battle;
+mod division;
 mod division_movement;
 mod economy;
 mod province;
 mod tick;
 
-pub use {battle::*, division_movement::*, economy::*, province::*, tick::*};
+pub use {battle::*, division::*, division_movement::*, economy::*, province::*, tick::*};
 
 use bevy::prelude::*;
 
@@ -15,6 +16,7 @@ impl Plugin for GamePlugins {
         app.add_plugins((
             BattlePlugin,
             DivisionMovementPlugin,
+            DivisionPlugin,
             ProvincePlugin,
             EconomyPlugin,
             TickPlugin,

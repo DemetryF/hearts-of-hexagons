@@ -30,16 +30,16 @@ impl Plugin for BattlePlugin {
 }
 
 pub fn trigger_attack(
-    moving_divisions: Query<(Entity, &Division, &Path)>,
-    divisions: Query<(Entity, &Division)>,
+    moving_divisions: Query<(Entity, &DivisionPos, &Path)>,
+    divisions: Query<(Entity, &DivisionPos)>,
     mut commands: Commands,
 ) {
-    for (id, division, path) in moving_divisions {
+    for (id, &DivisionPos(pos), path) in moving_divisions {
         let &dst = path.provs.last().unwrap();
 
         let mut divs_at_dst = {
             (divisions.iter())
-                .filter(|(_, div)| div.pos == dst)
+                .filter(|(_, pos)| pos.0 == dst)
                 .peekable()
         };
 
@@ -48,19 +48,19 @@ pub fn trigger_attack(
         }
 
         for (id, _) in divs_at_dst {
-            commands.entity(id).insert(DefendsFrom(division.pos));
+            commands.entity(id).insert(DefendsFrom(pos));
         }
     }
 }
 
 fn apply_attacks(
     attacking: Query<(&AttacksOn, &CombatStats)>,
-    mut divisions: Query<(&mut Division, &CombatStats)>,
+    mut divisions: Query<(&mut Division, &mut DivisionPos, &CombatStats)>,
 ) {
     for (&AttacksOn(dst), &CombatStats { attack, .. }) in attacking {
-        let defenders = divisions.iter_mut().filter(|(d, _)| d.pos == dst);
+        let defenders = divisions.iter_mut().filter(|(_, pos, _)| pos.0 == dst);
 
-        let (mut attacked, &CombatStats { defend, .. }) =
+        let (mut attacked, _, &CombatStats { defend, .. }) =
             defenders.choose(&mut rand::rng()).unwrap();
 
         deal_damage(&mut *attacked, attack, defend);
@@ -69,12 +69,12 @@ fn apply_attacks(
 
 fn apply_defends(
     defending: Query<(&DefendsFrom, &CombatStats)>,
-    mut divisions: Query<(&mut Division, &CombatStats)>,
+    mut divisions: Query<(&mut Division, &mut DivisionPos, &CombatStats)>,
 ) {
     for (&DefendsFrom(dst), &CombatStats { attack, .. }) in defending {
-        let attackers = divisions.iter_mut().filter(|(d, _)| d.pos == dst);
+        let attackers = divisions.iter_mut().filter(|(_, pos, _)| pos.0 == dst);
 
-        let (mut attacked, &CombatStats { breakthrough, .. }) =
+        let (mut attacked, _, &CombatStats { breakthrough, .. }) =
             attackers.choose(&mut rand::rng()).unwrap();
 
         deal_damage(&mut *attacked, attack, breakthrough);
@@ -128,24 +128,24 @@ fn stop_attack(attacking: Query<(Entity, &Division), With<AttacksOn>>, mut comma
 }
 
 fn retreat(
-    defending: Query<(Entity, &Division), With<DefendsFrom>>,
-    owners: Query<&Owner>,
+    defending: Query<(Entity, &Division, &DivisionPos, &DivisionOwner), With<DefendsFrom>>,
+    owners: Query<&ProvinceOwner>,
     map: Res<Map>,
     mut commands: Commands,
 ) {
-    for (id, defending) in defending {
+    for (id, defending, &DivisionPos(pos), &DivisionOwner(owner)) in defending {
         if defending.organization > 0. {
             continue;
         }
 
-        for neighbor in defending.pos.neighbours() {
+        for neighbor in pos.neighbours() {
             let Some(&prov) = map.provs.get(&neighbor) else {
                 continue;
             };
 
-            let owner = owners.get(prov).unwrap();
+            let prov_owner = owners.get(prov).unwrap().0;
 
-            if Some(defending.country) != owner.0 {
+            if Some(owner) != prov_owner {
                 continue;
             }
 

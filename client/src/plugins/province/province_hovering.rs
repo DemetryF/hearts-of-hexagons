@@ -54,7 +54,7 @@ fn update_hovered(
 pub struct Highlighted(Option<Entity>);
 
 fn unhighlight(
-    mut provs: Query<(&Owner, &mut MeshMaterial2d<ColorMaterial>)>,
+    mut provs: Query<(&ProvinceOwner, &mut MeshMaterial2d<ColorMaterial>)>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     countries: Query<&Country>,
     highlighted: ResMut<Highlighted>,
@@ -73,7 +73,7 @@ fn unhighlight(
 
 fn update_highlighted(
     mut provs: Query<(Entity, &Province, &mut MeshMaterial2d<ColorMaterial>)>,
-    owners: Query<&Owner>,
+    owners: Query<&ProvinceOwner>,
     countries: Query<&Country>,
     mut highlighted: ResMut<Highlighted>,
     mut materials: ResMut<Assets<ColorMaterial>>,

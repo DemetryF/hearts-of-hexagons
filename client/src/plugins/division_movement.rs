@@ -45,25 +45,28 @@ pub struct PrevPos {
     pub prev: HexagonPos,
 }
 
-fn init_prev_pos(divisions: Query<(Entity, &Division), Added<Division>>, mut commands: Commands) {
-    for (entity, div) in divisions {
+fn init_prev_pos(
+    divisions: Query<(Entity, &DivisionPos), Added<DivisionPos>>,
+    mut commands: Commands,
+) {
+    for (entity, &DivisionPos(pos)) in divisions {
         commands.entity(entity).insert(PrevPos {
-            actual: div.pos,
-            prev: div.pos,
+            actual: pos,
+            prev: pos,
         });
     }
 }
 
-fn update_prev_pos(divisions: Query<(&Division, &mut PrevPos), Changed<Division>>) {
-    for (div, mut prev_pos) in divisions {
+fn update_prev_pos(divisions: Query<(&DivisionPos, &mut PrevPos), Changed<DivisionPos>>) {
+    for (&DivisionPos(pos), mut prev_pos) in divisions {
         prev_pos.prev = prev_pos.actual;
-        prev_pos.actual = div.pos;
+        prev_pos.actual = pos;
     }
 }
 
 fn update_division_mesh(
-    mut divisions: Query<(&mut Transform, &Division), With<Division>>,
-    changed: Query<&PrevPos, Changed<Division>>,
+    mut divisions: Query<(&mut Transform, &DivisionPos)>,
+    changed: Query<&PrevPos, Changed<DivisionPos>>,
     mut divisions_at_prov: ResMut<DivisionsAtProvince>,
 ) {
     let affected_provs: HashSet<_> = changed
@@ -77,18 +80,18 @@ fn update_division_mesh(
 
     let affected_divisions = divisions
         .iter_mut()
-        .filter(|(_, div)| affected_provs.contains(&div.pos));
+        .filter(|(_, pos)| affected_provs.contains(&pos.0));
 
-    for (mut transform, division) in affected_divisions {
-        let divisions_at_the_prov = divisions_at_prov.0[&division.pos];
+    for (mut transform, &DivisionPos(pos)) in affected_divisions {
+        let divisions_at_the_prov = divisions_at_prov.0[&pos];
 
-        let pos = division.pos.real_regular(SIDE);
+        let real_pos = pos.real_regular(SIDE);
         let shift = Vec2::new(0., 3. * divisions_at_the_prov as f32);
 
         (divisions_at_prov.0)
-            .entry(division.pos)
+            .entry(pos)
             .and_modify(|count| *count += 1);
 
-        transform.translation = Vec3::new(pos.x + shift.x, pos.y + shift.y, 1.);
+        transform.translation = Vec3::new(real_pos.x + shift.x, real_pos.y + shift.y, 1.);
     }
 }

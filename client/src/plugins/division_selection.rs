@@ -18,7 +18,7 @@ pub struct SelectedDivision;
 
 fn select_division(
     selected: Option<Single<Entity, With<SelectedDivision>>>,
-    divisions: Query<(Entity, &GlobalTransform, &Division), With<Division>>,
+    divisions: Query<(Entity, &GlobalTransform, &DivisionOwner), With<Division>>,
     camera: Single<(&Camera, &GlobalTransform)>,
     window: Single<&Window>,
     playing_country: Res<PlayingCountry>,
@@ -38,10 +38,10 @@ fn select_division(
         return;
     };
 
-    let Some((id, _, _)) = divisions.iter().find(|(_, transform, division)| {
+    let Some((id, _, _)) = divisions.iter().find(|(_, transform, owner)| {
         let rect = Rect::from_center_size(transform.translation().xy(), Vec2::new(4., 2.5));
 
-        rect.contains(cursor) && division.country == playing_country.0.unwrap()
+        rect.contains(cursor) && owner.0 == playing_country.0.unwrap()
     }) else {
         return;
     };

@@ -63,57 +63,60 @@ fn spawn_divisions(mut commands: Commands, countries: Query<(&Country, Entity)>)
         .find(|(country, _)| &country.name == "France")
         .unwrap();
 
-    commands
-        .spawn(Division {
+    commands.spawn((
+        Division {
             organization: 20.,
             max_organization: 40.,
             hp: 100.,
             max_hp: 120.,
             speed: 10.,
-            pos: HexagonPos { x: 30, y: -44 },
-            country: id,
-        })
-        .insert(CombatStats {
-            attack: 10.,
-            defend: 10.,
-            breakthrough: 10.,
-        });
+        },
+        DivisionPos(HexagonPos { x: 30, y: -44 }),
+        CombatStats {
+            attack: 9.,
+            defend: 9.,
+            breakthrough: 9.,
+        },
+        DivisionOwner(id),
+    ));
 
     let (_, id) = (countries.into_iter())
         .find(|(country, _)| &country.name == "Germany")
         .unwrap();
 
-    commands
-        .spawn(Division {
+    commands.spawn((
+        Division {
             organization: 40.,
             max_organization: 40.,
             hp: 100.,
             max_hp: 120.,
             speed: 10.,
-            pos: HexagonPos { x: 32, y: -41 },
-            country: id,
-        })
-        .insert(CombatStats {
+        },
+        DivisionPos(HexagonPos { x: 32, y: -41 }),
+        CombatStats {
             attack: 40.,
             defend: 10.,
             breakthrough: 10.,
-        });
+        },
+        DivisionOwner(id),
+    ));
 
-    commands
-        .spawn(Division {
+    commands.spawn((
+        Division {
             organization: 40.,
             max_organization: 40.,
             hp: 100.,
             max_hp: 120.,
             speed: 10.,
-            pos: HexagonPos { x: 32, y: -41 },
-            country: id,
-        })
-        .insert(CombatStats {
+        },
+        DivisionPos(HexagonPos { x: 32, y: -41 }),
+        CombatStats {
             attack: 40.,
             defend: 10.,
             breakthrough: 10.,
-        });
+        },
+        DivisionOwner(id),
+    ));
 
     println!("spawned 3 divisions")
 }
@@ -132,14 +135,11 @@ fn init_map_n_countries(mut commands: Commands, mut map: ResMut<Map>) {
             );
 
             commands
-                .spawn((
-                    Replicated,
-                    Country {
-                        name,
-                        color,
-                        money: 0,
-                    },
-                ))
+                .spawn(Country {
+                    name,
+                    color,
+                    money: 0,
+                })
                 .id()
         };
 
@@ -150,7 +150,7 @@ fn init_map_n_countries(mut commands: Commands, mut map: ResMut<Map>) {
         let control = countries_id[&color];
 
         let id = commands
-            .spawn((Replicated, Province { pos }, Owner(Some(control))))
+            .spawn((Province { pos }, ProvinceOwner(Some(control))))
             .id();
 
         map.provs.insert(pos, id);
@@ -209,6 +209,7 @@ fn assign_country(
             CountryAssignmentResponse::CountryIsBusy
         } else {
             players.0.insert(client, country);
+            commands.entity(client).insert(Plays(country));
 
             CountryAssignmentResponse::Success(country)
         }

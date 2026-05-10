@@ -15,13 +15,16 @@ impl Plugin for ProtocolPlugin {
     fn build(&self, app: &mut App) {
         app.replicate::<Country>()
             .replicate::<Province>()
-            .replicate::<Owner>()
+            .replicate::<ProvinceOwner>()
             .replicate::<Division>()
+            .replicate::<DivisionPos>()
+            .replicate::<DivisionOwner>()
             .replicate::<CombatStats>()
             .replicate::<Path>()
             .replicate::<MovementBlock>()
             .replicate::<AttacksOn>()
             .replicate::<DefendsFrom>()
+            .add_visibility_filter::<DivisionVisibility>()
             .add_mapped_client_event::<MovingOrderEvent>(Channel::Ordered)
             .add_mapped_client_event::<CountryAssignmentRequest>(Channel::Ordered)
             .add_mapped_server_event::<CountryAssignmentResponse>(Channel::Ordered);

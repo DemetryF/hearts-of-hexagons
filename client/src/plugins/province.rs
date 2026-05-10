@@ -27,7 +27,7 @@ pub struct Map {
 }
 
 pub fn setup_provs_meshes(
-    provs: Query<(Entity, &Province, &Owner), Without<Mesh2d>>,
+    provs: Query<(Entity, &Province, &ProvinceOwner), Without<Mesh2d>>,
     countries: Query<&Country>,
     mut map: ResMut<Map>,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -52,7 +52,7 @@ pub fn setup_provs_meshes(
 }
 
 fn update_prov_color(
-    provs: Query<(Entity, &Owner), Changed<Owner>>,
+    provs: Query<(Entity, &ProvinceOwner), Changed<ProvinceOwner>>,
     countries: Query<&Country>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut commands: Commands,

@@ -26,8 +26,8 @@ impl Border {
 }
 
 fn update_borders(
-    provs: Query<(&Province, &Owner), Changed<Owner>>,
-    owners: Query<&Owner>,
+    provs: Query<(&Province, &ProvinceOwner), Changed<ProvinceOwner>>,
+    owners: Query<&ProvinceOwner>,
     borders: Query<(Entity, &Border)>,
     map: Res<Map>,
     mut commands: Commands,

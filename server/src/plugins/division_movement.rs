@@ -38,7 +38,7 @@ pub struct MovingOrder {
 
 fn moving_order(
     event: On<FromClient<MovingOrderEvent>>,
-    divisions: Query<&Division>,
+    division_owners: Query<&DivisionOwner>,
     players: ResMut<Players>,
     mut commands: Commands,
 ) {
@@ -46,23 +46,21 @@ fn moving_order(
     let country = players.0[&client];
     let division = event.entity;
 
-    let division = divisions.get(division).unwrap();
+    let division_owner = division_owners.get(division).unwrap().0;
 
-    if division.country != country {
-        return;
+    if division_owner == country {
+        commands
+            .entity(event.entity)
+            .insert(MovingOrder { to: event.to });
     }
-
-    commands
-        .entity(event.entity)
-        .insert(MovingOrder { to: event.to });
 }
 
 fn calculate_path(
-    division: Option<Single<(Entity, &Division, &MovingOrder), Changed<MovingOrder>>>,
+    division: Option<Single<(Entity, &DivisionPos, &MovingOrder), Changed<MovingOrder>>>,
     map: Res<Map>,
     mut commands: Commands,
 ) {
-    let Some((id, division, order)) = division.map(|d| d.into_inner()) else {
+    let Some((id, &DivisionPos(pos), order)) = division.map(|d| d.into_inner()) else {
         return;
     };
 
@@ -86,12 +84,9 @@ fn calculate_path(
     let mut g_score = HashMap::new();
     let mut parent = HashMap::new();
 
-    queue.push(Reverse(QueueElement(
-        0 + division.pos.manhattan_dist(order.to),
-        division.pos,
-    )));
+    queue.push(Reverse(QueueElement(0 + pos.manhattan_dist(order.to), pos)));
 
-    g_score.insert(division.pos, 0);
+    g_score.insert(pos, 0);
 
     while let Some(Reverse(QueueElement(_, current))) = queue.pop() {
         if current == order.to {
@@ -125,7 +120,7 @@ fn calculate_path(
             // reversed path
             let mut provs = vec![order.to];
 
-            while current != division.pos {
+            while current != pos {
                 provs.push(current);
                 current = parent[&current];
             }
@@ -140,10 +135,10 @@ fn calculate_path(
 }
 
 pub fn process_moving(
-    divisions: Query<(Entity, &mut Path, &mut Division, Option<&MovementBlock>)>,
+    divisions: Query<(Entity, &mut Path, &mut DivisionPos, Option<&MovementBlock>)>,
     mut commands: Commands,
 ) {
-    for (entity, mut path, mut division, movement_block) in divisions {
+    for (entity, mut path, mut pos, movement_block) in divisions {
         if movement_block.is_some() {
             continue;
         }
@@ -153,15 +148,14 @@ pub fn process_moving(
         if path.progress == PROV_DISTANCE {
             path.progress = 0;
 
-            let from = division.pos;
+            let from = pos.0;
+            let to = path.provs.pop().unwrap();
 
-            division.pos = path.provs.pop().unwrap();
+            pos.0 = to;
 
-            commands.entity(entity).trigger(|entity| DivisionMoved {
-                entity,
-                from,
-                to: division.pos,
-            });
+            commands
+                .entity(entity)
+                .trigger(|entity| DivisionMoved { entity, from, to });
 
             if path.provs.is_empty() {
                 commands.entity(entity).remove::<(Path, MovingOrder)>();
