@@ -1,7 +1,7 @@
 use {
     crate::{
         map::Map,
-        plugins::{Tick, process_moving},
+        plugins::{PostTick, Tick, process_moving},
     },
     bevy::prelude::*,
     rand::seq::IteratorRandom,
@@ -21,11 +21,11 @@ impl Plugin for BattlePlugin {
                 apply_defends,
                 stop_attack,
                 retreat,
-                clear_attacks_defends,
             )
                 .chain()
                 .before(process_moving),
-        );
+        )
+        .add_systems(PostTick, clear_attacks_defends);
     }
 }
 
@@ -103,20 +103,6 @@ fn deal_damage(attacked: &mut Division, attack: f32, defend: f32) {
     attacked.organization = attacked.organization.max(0.);
 }
 
-fn clear_attacks_defends(
-    attacks: Query<Entity, With<AttacksOn>>,
-    defends: Query<Entity, With<DefendsFrom>>,
-    mut commands: Commands,
-) {
-    for id in attacks {
-        commands.entity(id).remove::<AttacksOn>();
-    }
-
-    for id in defends {
-        commands.entity(id).remove::<DefendsFrom>();
-    }
-}
-
 fn stop_attack(attacking: Query<(Entity, &Division), With<AttacksOn>>, mut commands: Commands) {
     for (id, attacking) in attacking {
         if attacking.organization > 0. {
@@ -138,20 +124,28 @@ fn retreat(
             continue;
         }
 
-        for neighbor in pos.neighbours() {
-            let Some(&prov) = map.provs.get(&neighbor) else {
-                continue;
-            };
+        let retreat_pos = pos.neighbours().into_iter().find(|prov| {
+            (map.provs.get(prov)).is_some_and(|&prov| owners.get(prov).unwrap().0 != Some(owner))
+        });
 
-            let prov_owner = owners.get(prov).unwrap().0;
-
-            if Some(owner) != prov_owner {
-                continue;
-            }
-
-            commands.entity(id).insert(MovingOrder { to: neighbor });
-
-            break;
+        if let Some(retreat_pos) = retreat_pos {
+            commands.entity(id).insert(MovingOrder { to: retreat_pos });
+        } else {
+            commands.entity(id).despawn();
         }
+    }
+}
+
+fn clear_attacks_defends(
+    attacks: Query<Entity, With<AttacksOn>>,
+    defends: Query<Entity, With<DefendsFrom>>,
+    mut commands: Commands,
+) {
+    for id in attacks {
+        commands.entity(id).remove::<AttacksOn>();
+    }
+
+    for id in defends {
+        commands.entity(id).remove::<DefendsFrom>();
     }
 }

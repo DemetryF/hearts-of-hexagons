@@ -8,7 +8,7 @@ pub struct TickPlugin;
 impl Plugin for TickPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(TickTimer(Timer::new(
-            Duration::from_secs_f32(0.5),
+            Duration::from_secs_f32(0.1),
             TimerMode::Repeating,
         )))
         .add_systems(Update, run_tick);

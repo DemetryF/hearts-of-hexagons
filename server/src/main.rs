@@ -66,10 +66,11 @@ fn spawn_divisions(mut commands: Commands, countries: Query<(&Country, Entity)>)
     commands.spawn((
         Division {
             organization: 20.,
+            recovery_speed: 2.,
             max_organization: 40.,
             hp: 100.,
             max_hp: 120.,
-            speed: 10.,
+            speed: 5.,
         },
         DivisionPos(HexagonPos { x: 30, y: -44 }),
         CombatStats {
@@ -87,10 +88,11 @@ fn spawn_divisions(mut commands: Commands, countries: Query<(&Country, Entity)>)
     commands.spawn((
         Division {
             organization: 40.,
+            recovery_speed: 2.,
             max_organization: 40.,
             hp: 100.,
             max_hp: 120.,
-            speed: 10.,
+            speed: 5.,
         },
         DivisionPos(HexagonPos { x: 32, y: -41 }),
         CombatStats {
@@ -104,10 +106,11 @@ fn spawn_divisions(mut commands: Commands, countries: Query<(&Country, Entity)>)
     commands.spawn((
         Division {
             organization: 40.,
+            recovery_speed: 2.,
             max_organization: 40.,
             hp: 100.,
             max_hp: 120.,
-            speed: 10.,
+            speed: 5.,
         },
         DivisionPos(HexagonPos { x: 32, y: -41 }),
         CombatStats {

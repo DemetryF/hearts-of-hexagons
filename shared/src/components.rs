@@ -25,7 +25,9 @@ pub struct ProvinceOwner(#[entities] pub Option<Entity>);
 #[require(Replicated)]
 pub struct Division {
     pub organization: f32,
+    pub recovery_speed: f32,
     pub max_organization: f32,
+
     pub hp: f32,
     pub max_hp: f32,
 
@@ -67,7 +69,7 @@ pub struct MovingOrder {
 #[derive(Component, Serialize, Deserialize)]
 pub struct Path {
     pub provs: Vec<HexagonPos>,
-    pub progress: usize,
+    pub progress: f32,
 }
 
 #[derive(Component, Default, Serialize, Deserialize)]

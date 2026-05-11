@@ -1,13 +1,54 @@
-use crate::{map::Map, plugins::Tick};
+use crate::{
+    map::Map,
+    plugins::{Tick, trigger_attack},
+};
 use bevy::prelude::*;
 use shared::*;
 use smallvec::SmallVec;
+
+const REGENERATION_COST: usize = 50;
 
 pub struct DivisionPlugin;
 
 impl Plugin for DivisionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Tick, update_division_on_border_with);
+        app.add_systems(
+            Tick,
+            (
+                update_division_on_border_with,
+                (recovery, regeneration).after(trigger_attack),
+            ),
+        );
+    }
+}
+
+fn recovery(divisions: Query<&mut Division, (Without<AttacksOn>, Without<DefendsFrom>)>) {
+    for mut division in divisions {
+        if division.organization < division.recovery_speed {
+            division.organization += division.recovery_speed;
+            division.organization = division.organization.min(division.max_organization);
+        }
+    }
+}
+
+fn regeneration(
+    divisions: Query<(&mut Division, &DivisionOwner), (Without<AttacksOn>, Without<DefendsFrom>)>,
+    mut countries: Query<&mut Country>,
+) {
+    for (mut division, owner) in divisions {
+        let mut country = countries.get_mut(owner.0).unwrap();
+
+        let diff = division.max_hp - division.hp;
+
+        if diff > 0. {
+            let can_regenerate = diff.min(1.);
+            let cost = (REGENERATION_COST as f32 * can_regenerate).floor() as usize;
+
+            if country.money >= cost {
+                country.money -= cost;
+                division.hp += can_regenerate;
+            }
+        }
     }
 }
 

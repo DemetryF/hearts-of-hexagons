@@ -16,7 +16,7 @@ use {
     },
 };
 
-const PROV_DISTANCE: usize = 1;
+const PROV_DISTANCE: f32 = 35.;
 
 pub struct DivisionMovementPlugin;
 
@@ -125,7 +125,10 @@ fn calculate_path(
                 current = parent[&current];
             }
 
-            commands.entity(id).insert(Path { provs, progress: 0 });
+            commands.entity(id).insert(Path {
+                provs,
+                progress: 0.,
+            });
 
             return;
         }
@@ -135,18 +138,24 @@ fn calculate_path(
 }
 
 pub fn process_moving(
-    divisions: Query<(Entity, &mut Path, &mut DivisionPos, Option<&MovementBlock>)>,
+    divisions: Query<(
+        Entity,
+        &mut Path,
+        &Division,
+        &mut DivisionPos,
+        Option<&MovementBlock>,
+    )>,
     mut commands: Commands,
 ) {
-    for (entity, mut path, mut pos, movement_block) in divisions {
+    for (entity, mut path, division, mut pos, movement_block) in divisions {
         if movement_block.is_some() {
             continue;
         }
 
-        path.progress += 1;
+        path.progress += division.speed;
 
-        if path.progress == PROV_DISTANCE {
-            path.progress = 0;
+        if path.progress >= PROV_DISTANCE {
+            path.progress = path.progress - PROV_DISTANCE;
 
             let from = pos.0;
             let to = path.provs.pop().unwrap();

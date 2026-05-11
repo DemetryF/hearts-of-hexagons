@@ -117,7 +117,6 @@ fn country_button(
     };
 
     if interaction == Interaction::Pressed {
-        println!("country button pressed");
         commands.client_trigger(CountryAssignmentRequest { entity: country });
     }
 }
@@ -131,7 +130,6 @@ fn assign_country(
         &CountryAssignmentResponse::Success(entity) => {
             playing_country.0 = Some(entity);
             app_state.set(AppState::Game);
-            println!("assigned country");
         }
         CountryAssignmentResponse::CountryIsBusy => println!("country is busy"),
     }
