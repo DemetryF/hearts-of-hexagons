@@ -1,6 +1,4 @@
-use {crate::plugins::SIDE, shared::*};
-
-use {bevy::prelude::*, std::collections::HashMap};
+use {crate::common::SIDE, bevy::prelude::*, shared::*, std::collections::HashMap};
 
 pub struct DivisionMeshPlugin;
 

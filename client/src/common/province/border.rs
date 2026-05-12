@@ -1,6 +1,6 @@
 use {bevy::prelude::*, shared::*};
 
-use crate::plugins::{Map, SIDE, setup_provs_meshes};
+use crate::common::{Map, SIDE, setup_provs_meshes};
 
 pub struct BorderPlugin;
 

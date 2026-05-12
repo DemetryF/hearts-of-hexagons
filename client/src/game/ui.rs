@@ -1,7 +1,7 @@
 use {
     crate::{
         AppState, PlayingCountry,
-        plugins::{HoveredProvince, Map},
+        common::{HoveredProvince, Map},
     },
     bevy::{input_focus::InputFocus, prelude::*},
     shared::*,
@@ -13,9 +13,9 @@ const BUTTON_NORMAL_COLOR: Color = Color::linear_rgb(0.4, 0.4, 0.4);
 const BUTTON_HOVERED_COLOR: Color = Color::linear_rgb(0.43, 0.43, 0.43);
 const BUTTON_PRESSED_COLOR: Color = Color::linear_rgb(0.46, 0.46, 0.46);
 
-pub struct GameUiPlugin;
+pub struct UiPlugin;
 
-impl Plugin for GameUiPlugin {
+impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             OnEnter(AppState::Game),

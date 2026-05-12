@@ -1,6 +1,7 @@
+mod common;
 mod connecting_menu;
+mod game;
 mod lobby;
-mod plugins;
 
 use {
     bevy::{input_focus::InputFocus, prelude::*},
@@ -11,12 +12,8 @@ use {
 };
 
 use crate::{
-    connecting_menu::ConnectingMenuPlugin,
+    common::CommonPlugins, connecting_menu::ConnectingMenuPlugin, game::GamePlugin,
     lobby::LobbyPlugin,
-    plugins::{
-        ControlsPlugin, DivisionMeshPlugin, DivisionMovementPlugin, DivisionSelectionPlugin,
-        GameUiPlugin, ProvincePlugin,
-    },
 };
 
 fn main() {
@@ -27,17 +24,10 @@ fn main() {
             RepliconPlugins,
             RepliconRenetPlugins,
             ProtocolPlugin,
-            // connecting menu
             ConnectingMenuPlugin,
-            // lobby
-            ProvincePlugin,
-            ControlsPlugin,
+            CommonPlugins,
             LobbyPlugin,
-            // game
-            DivisionMeshPlugin,
-            DivisionMovementPlugin,
-            DivisionSelectionPlugin,
-            GameUiPlugin,
+            GamePlugin,
         ))
         .init_resource::<InputFocus>()
         .init_resource::<PlayingCountry>()
@@ -49,7 +39,7 @@ fn main() {
 #[derive(States, Default, Debug, Hash, PartialEq, Eq, Clone)]
 pub enum AppState {
     #[default]
-    None,
+    ConnectingMenu,
     Lobby,
     Game,
 }

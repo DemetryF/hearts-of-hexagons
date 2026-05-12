@@ -1,5 +1,5 @@
 use {
-    crate::plugins::{Map, SIDE},
+    crate::common::{Map, SIDE},
     bevy::prelude::*,
     shared::*,
 };

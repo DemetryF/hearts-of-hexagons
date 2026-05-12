@@ -1,8 +1,13 @@
-use std::collections::HashSet;
-
-use {bevy::prelude::*, bevy_replicon::shared::message::client_event::ClientTriggerExt, shared::*};
-
-use crate::plugins::{DivisionsAtProvince, HoveredProvince, SIDE, SelectedDivision};
+use {
+    crate::{
+        common::{HoveredProvince, SIDE},
+        game::{DivisionsAtProvince, SelectedDivision},
+    },
+    bevy::prelude::*,
+    bevy_replicon::shared::message::client_event::ClientTriggerExt,
+    shared::*,
+    std::collections::HashSet,
+};
 
 pub struct DivisionMovementPlugin;
 
