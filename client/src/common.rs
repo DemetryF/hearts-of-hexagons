@@ -1,17 +1,15 @@
+mod button;
 mod controls;
 mod province;
 
-pub use province::*;
+pub use {button::*, controls::*, province::*};
 
-use {
-    crate::common::{controls::ControlsPlugin, province::ProvincePlugin},
-    bevy::prelude::*,
-};
+use bevy::prelude::*;
 
 pub struct CommonPlugins;
 
 impl Plugin for CommonPlugins {
     fn build(&self, app: &mut App) {
-        app.add_plugins((ProvincePlugin, ControlsPlugin));
+        app.add_plugins((ProvincePlugin, ControlsPlugin, ButtonPlugin));
     }
 }

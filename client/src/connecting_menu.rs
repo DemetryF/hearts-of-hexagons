@@ -1,5 +1,5 @@
 use {
-    bevy::{input_focus::InputFocus, prelude::*},
+    bevy::prelude::*,
     bevy_replicon::shared::backend::{ClientState, channels::RepliconChannels},
     bevy_replicon_renet::{
         RenetChannelsExt, RenetClient,
@@ -12,16 +12,12 @@ use {
 
 const BACKGROUND_COLOR: Color = Color::linear_rgba(0.3, 0.3, 0.3, 0.4);
 
-const BUTTON_NORMAL_COLOR: Color = Color::linear_rgb(0.4, 0.4, 0.4);
-const BUTTON_HOVERED_COLOR: Color = Color::linear_rgb(0.43, 0.43, 0.43);
-const BUTTON_PRESSED_COLOR: Color = Color::linear_rgb(0.46, 0.46, 0.46);
-
 pub struct ConnectingMenuPlugin;
 
 impl Plugin for ConnectingMenuPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, init_ui)
-            .add_systems(Update, (connect_button_background_color, connect))
+            .add_systems(Update, connect)
             .add_systems(OnEnter(ClientState::Connected), despawn_connect_menu);
     }
 }
@@ -68,7 +64,6 @@ fn init_ui(mut commands: Commands) {
             (
                 UiConnect,
                 Button,
-                BackgroundColor(BUTTON_NORMAL_COLOR),
                 Node {
                     border_radius: BorderRadius::all(px(20)),
                     padding: UiRect::horizontal(px(10)),
@@ -81,33 +76,6 @@ fn init_ui(mut commands: Commands) {
             )
         ],
     ));
-}
-
-fn connect_button_background_color(
-    mut input_focus: ResMut<InputFocus>,
-    buttons: Query<
-        (Entity, &Interaction, &mut BackgroundColor, &mut Button),
-        (Changed<Interaction>, With<UiConnect>),
-    >,
-) {
-    for (id, &interaction, mut color, mut button) in buttons {
-        match interaction {
-            Interaction::Pressed => {
-                input_focus.set(id);
-                color.0 = BUTTON_PRESSED_COLOR;
-                button.set_changed();
-            }
-            Interaction::Hovered => {
-                input_focus.set(id);
-                color.0 = BUTTON_HOVERED_COLOR;
-                button.set_changed();
-            }
-            Interaction::None => {
-                input_focus.set(id);
-                color.0 = BUTTON_NORMAL_COLOR;
-            }
-        }
-    }
 }
 
 fn connect(

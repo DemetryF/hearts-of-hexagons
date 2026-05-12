@@ -1,6 +1,4 @@
-use {bevy::prelude::*, shared::*};
-
-use crate::PlayingCountry;
+use {crate::PlayingCountry, bevy::prelude::*, shared::*};
 
 pub struct DivisionSelectionPlugin;
 

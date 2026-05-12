@@ -1,30 +1,18 @@
 use {
-    bevy::{input_focus::InputFocus, prelude::*},
+    crate::{AppState, PlayingCountry},
+    bevy::prelude::*,
     bevy_replicon::prelude::*,
     shared::*,
 };
 
-use crate::{AppState, PlayingCountry};
-
 const BACKGROUND_COLOR: Color = Color::linear_rgba(0.3, 0.3, 0.3, 0.4);
-
-const BUTTON_NORMAL_COLOR: Color = Color::linear_rgb(0.4, 0.4, 0.4);
-const BUTTON_HOVERED_COLOR: Color = Color::linear_rgb(0.43, 0.43, 0.43);
-const BUTTON_PRESSED_COLOR: Color = Color::linear_rgb(0.46, 0.46, 0.46);
 
 pub struct LobbyPlugin;
 
 impl Plugin for LobbyPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(ClientState::Connected), (lobby_state, spawn_ui))
-            .add_systems(
-                Update,
-                (
-                    spawn_country_button,
-                    country_button_interaction,
-                    country_button,
-                ),
-            )
+            .add_systems(Update, (spawn_country_button, country_assignment_request))
             .add_systems(OnEnter(AppState::Game), despawn_ui)
             .add_observer(assign_country);
     }
@@ -77,40 +65,12 @@ fn spawn_country_button(
                 padding: UiRect::horizontal(px(10)),
                 ..Default::default()
             },
-            BackgroundColor(BUTTON_NORMAL_COLOR),
             children![(Text::new(&country.name))],
         ));
     }
 }
 
-fn country_button_interaction(
-    mut input_focus: ResMut<InputFocus>,
-    buttons: Query<
-        (Entity, &Interaction, &mut BackgroundColor, &mut Button),
-        (Changed<Interaction>, With<UiCountryButton>),
-    >,
-) {
-    for (id, &interaction, mut color, mut button) in buttons {
-        match interaction {
-            Interaction::Pressed => {
-                input_focus.set(id);
-                color.0 = BUTTON_PRESSED_COLOR;
-                button.set_changed();
-            }
-            Interaction::Hovered => {
-                input_focus.set(id);
-                color.0 = BUTTON_HOVERED_COLOR;
-                button.set_changed();
-            }
-            Interaction::None => {
-                input_focus.set(id);
-                color.0 = BUTTON_NORMAL_COLOR;
-            }
-        }
-    }
-}
-
-fn country_button(
+fn country_assignment_request(
     button: Option<Single<(&Interaction, &UiCountryButton), Changed<Interaction>>>,
     mut commands: Commands,
 ) {

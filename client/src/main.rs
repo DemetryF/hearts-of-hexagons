@@ -4,16 +4,15 @@ mod game;
 mod lobby;
 
 use {
+    crate::{
+        common::CommonPlugins, connecting_menu::ConnectingMenuPlugin, game::GamePlugin,
+        lobby::LobbyPlugin,
+    },
     bevy::{input_focus::InputFocus, prelude::*},
     bevy_replicon::prelude::*,
     bevy_replicon_renet::RepliconRenetPlugins,
     bevy_simple_text_input::TextInputPlugin,
     shared::*,
-};
-
-use crate::{
-    common::CommonPlugins, connecting_menu::ConnectingMenuPlugin, game::GamePlugin,
-    lobby::LobbyPlugin,
 };
 
 fn main() {

@@ -3,33 +3,25 @@ use {
         AppState, PlayingCountry,
         common::{HoveredProvince, Map},
     },
-    bevy::{input_focus::InputFocus, prelude::*},
+    bevy::prelude::*,
     shared::*,
 };
 
 const BACKGROUND_COLOR: Color = Color::linear_rgba(0.3, 0.3, 0.3, 0.4);
 
-const BUTTON_NORMAL_COLOR: Color = Color::linear_rgb(0.4, 0.4, 0.4);
-const BUTTON_HOVERED_COLOR: Color = Color::linear_rgb(0.43, 0.43, 0.43);
-const BUTTON_PRESSED_COLOR: Color = Color::linear_rgb(0.46, 0.46, 0.46);
-
 pub struct UiPlugin;
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            OnEnter(AppState::Game),
-            (display_country_info, init_hovered_prov_info),
-        )
-        .add_systems(
-            Update,
-            (
-                buy_division_button,
-                update_country_info,
-                update_hovered_prov_info,
+        (app)
+            .add_systems(
+                OnEnter(AppState::Game),
+                (display_country_info, init_hovered_prov_info),
             )
-                .run_if(in_state(AppState::Game)),
-        );
+            .add_systems(
+                Update,
+                (update_country_info, update_hovered_prov_info).run_if(in_state(AppState::Game)),
+            );
     }
 }
 
@@ -61,7 +53,7 @@ fn display_country_info(mut commands: Commands) {
         children![
             (
                 UiMoneyLabel,
-                Text::new(""),
+                Text::default(),
                 TextLayout::new_with_justify(Justify::Center),
                 Node {
                     margin: UiRect::bottom(px(10)),
@@ -78,7 +70,6 @@ fn display_country_info(mut commands: Commands) {
                     padding: UiRect::horizontal(px(10)),
                     ..Default::default()
                 },
-                BackgroundColor(BUTTON_NORMAL_COLOR),
                 children![(
                     Text::new("Buy division"),
                     TextLayout::new_with_justify(Justify::Center),
@@ -86,33 +77,6 @@ fn display_country_info(mut commands: Commands) {
             )
         ],
     ));
-}
-
-fn buy_division_button(
-    mut input_focus: ResMut<InputFocus>,
-    query: Query<
-        (Entity, &Interaction, &mut BackgroundColor, &mut Button),
-        (Changed<Interaction>, With<UiBuyDivisionButton>),
-    >,
-) {
-    for (id, &interaction, mut color, mut button) in query {
-        match interaction {
-            Interaction::Pressed => {
-                input_focus.set(id);
-                color.0 = BUTTON_PRESSED_COLOR;
-                button.set_changed();
-            }
-            Interaction::Hovered => {
-                input_focus.set(id);
-                color.0 = BUTTON_HOVERED_COLOR;
-                button.set_changed();
-            }
-            Interaction::None => {
-                input_focus.set(id);
-                color.0 = BUTTON_NORMAL_COLOR;
-            }
-        }
-    }
 }
 
 fn update_country_info(
