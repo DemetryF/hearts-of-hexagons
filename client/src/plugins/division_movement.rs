@@ -1,8 +1,6 @@
 use std::collections::HashSet;
 
-use bevy::prelude::*;
-use bevy_replicon::shared::message::client_event::ClientTriggerExt;
-use shared::*;
+use {bevy::prelude::*, bevy_replicon::shared::message::client_event::ClientTriggerExt, shared::*};
 
 use crate::plugins::{DivisionsAtProvince, HoveredProvince, SIDE, SelectedDivision};
 

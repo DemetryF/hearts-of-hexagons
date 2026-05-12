@@ -1,5 +1,4 @@
-use bevy::prelude::*;
-use shared::*;
+use {bevy::prelude::*, shared::*};
 
 use crate::plugins::{Map, SIDE, setup_provs_meshes};
 

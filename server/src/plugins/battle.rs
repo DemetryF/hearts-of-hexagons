@@ -1,6 +1,6 @@
 use {
     crate::{
-        map::Map,
+        Map,
         plugins::{PostTick, Tick, process_moving},
     },
     bevy::prelude::*,
@@ -63,7 +63,7 @@ fn apply_attacks(
         let (mut attacked, _, &CombatStats { defend, .. }) =
             defenders.choose(&mut rand::rng()).unwrap();
 
-        deal_damage(&mut *attacked, attack, defend);
+        deal_damage(&mut attacked, attack, defend);
     }
 }
 
@@ -77,7 +77,7 @@ fn apply_defends(
         let (mut attacked, _, &CombatStats { breakthrough, .. }) =
             attackers.choose(&mut rand::rng()).unwrap();
 
-        deal_damage(&mut *attacked, attack, breakthrough);
+        deal_damage(&mut attacked, attack, breakthrough);
     }
 }
 

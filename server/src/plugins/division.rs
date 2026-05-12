@@ -1,10 +1,12 @@
-use crate::{
-    map::Map,
-    plugins::{Tick, trigger_attack},
+use {
+    crate::{
+        Map,
+        plugins::{Tick, trigger_attack},
+    },
+    bevy::prelude::*,
+    shared::*,
+    smallvec::SmallVec,
 };
-use bevy::prelude::*;
-use shared::*;
-use smallvec::SmallVec;
 
 const REGENERATION_COST: usize = 50;
 
@@ -61,13 +63,10 @@ fn update_division_on_border_with(
     mut commands: Commands,
 ) {
     for (entity, &DivisionPos(pos), &DivisionOwner(owner)) in divisions {
-        if !(changed.contains(entity)
-            || provs.iter().any(|prov| {
-                (prov.pos.neighbours())
-                    .iter()
-                    .any(|&neighbor_pos| neighbor_pos == pos)
-            }))
-        {
+        let division_changed = changed.contains(entity);
+        let adj_prov_changed = (provs.iter()).any(|prov| prov.pos.neighbours().contains(&pos));
+
+        if !(division_changed || adj_prov_changed) {
             continue;
         }
 

@@ -1,6 +1,8 @@
-use bevy::{input_focus::InputFocus, prelude::*};
-use bevy_replicon::prelude::*;
-use shared::*;
+use {
+    bevy::{input_focus::InputFocus, prelude::*},
+    bevy_replicon::prelude::*,
+    shared::*,
+};
 
 use crate::{AppState, PlayingCountry};
 
@@ -83,12 +85,12 @@ fn spawn_country_button(
 
 fn country_button_interaction(
     mut input_focus: ResMut<InputFocus>,
-    query: Query<
+    buttons: Query<
         (Entity, &Interaction, &mut BackgroundColor, &mut Button),
         (Changed<Interaction>, With<UiCountryButton>),
     >,
 ) {
-    for (id, &interaction, mut color, mut button) in query {
+    for (id, &interaction, mut color, mut button) in buttons {
         match interaction {
             Interaction::Pressed => {
                 input_focus.set(id);

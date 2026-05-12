@@ -1,8 +1,10 @@
-use bevy::{
-    input::mouse::{MouseScrollUnit, MouseWheel},
-    prelude::*,
+use {
+    bevy::{
+        input::mouse::{MouseScrollUnit, MouseWheel},
+        prelude::*,
+    },
+    bevy_replicon::prelude::*,
 };
-use bevy_replicon::prelude::*;
 
 pub struct ControlsPlugin;
 

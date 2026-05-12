@@ -1,8 +1,10 @@
-use crate::HexagonPos;
-use bevy::prelude::*;
-use bevy_replicon::prelude::*;
-use serde::{Deserialize, Serialize};
-use smallvec::SmallVec;
+use {
+    crate::HexagonPos,
+    bevy::prelude::*,
+    bevy_replicon::prelude::*,
+    serde::{Deserialize, Serialize},
+    smallvec::SmallVec,
+};
 
 #[derive(Component, Serialize, Deserialize)]
 #[require(Replicated)]

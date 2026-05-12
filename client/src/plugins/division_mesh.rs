@@ -1,5 +1,4 @@
-use crate::plugins::SIDE;
-use shared::*;
+use {crate::plugins::SIDE, shared::*};
 
 use {bevy::prelude::*, std::collections::HashMap};
 

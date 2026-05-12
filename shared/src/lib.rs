@@ -2,12 +2,9 @@ mod components;
 mod events;
 mod hexagon_pos;
 
-pub use components::*;
-pub use events::*;
-pub use hexagon_pos::*;
+pub use {components::*, events::*, hexagon_pos::*};
 
-use bevy::prelude::*;
-use bevy_replicon::prelude::*;
+use {bevy::prelude::*, bevy_replicon::prelude::*};
 
 pub struct ProtocolPlugin;
 

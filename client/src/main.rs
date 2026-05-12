@@ -2,11 +2,13 @@ mod connecting_menu;
 mod lobby;
 mod plugins;
 
-use bevy::{input_focus::InputFocus, prelude::*};
-use bevy_replicon::prelude::*;
-use bevy_replicon_renet::RepliconRenetPlugins;
-use bevy_simple_text_input::TextInputPlugin;
-use shared::*;
+use {
+    bevy::{input_focus::InputFocus, prelude::*},
+    bevy_replicon::prelude::*,
+    bevy_replicon_renet::RepliconRenetPlugins,
+    bevy_simple_text_input::TextInputPlugin,
+    shared::*,
+};
 
 use crate::{
     connecting_menu::ConnectingMenuPlugin,

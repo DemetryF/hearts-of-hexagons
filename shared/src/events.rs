@@ -1,6 +1,8 @@
-use crate::HexagonPos;
-use bevy::{ecs::entity::MapEntities, prelude::*};
-use serde::{Deserialize, Serialize};
+use {
+    crate::HexagonPos,
+    bevy::{ecs::entity::MapEntities, prelude::*},
+    serde::{Deserialize, Serialize},
+};
 
 #[derive(Event, Serialize, Deserialize, MapEntities, Clone)]
 pub struct MovingOrderEvent {

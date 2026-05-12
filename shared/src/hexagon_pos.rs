@@ -18,7 +18,7 @@ impl HexagonPos {
     pub fn real_regular(self, side: f32) -> Vec2 {
         let cos = (PI / 6.0).cos();
 
-        return self.real_scaled(2. * side, side * cos * 2., side);
+        self.real_scaled(2. * side, side * cos * 2., side)
     }
 
     pub fn real_scaled(self, width: f32, height: f32, side: f32) -> Vec2 {
@@ -31,7 +31,7 @@ impl HexagonPos {
     pub fn from_real_regular(p: Vec2, side: f32) -> Self {
         let cos = (PI / 6.0).cos();
 
-        return Self::from_real_scaled(p, 2. * side, side * cos * 2., side);
+        Self::from_real_scaled(p, 2. * side, side * cos * 2., side)
     }
 
     pub fn from_real_scaled(p: Vec2, width: f32, height: f32, side: f32) -> Self {

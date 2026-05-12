@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bevy = { version = "0.18.1", features = ["debug"] }
+bevy = { version = "0.18.1", features = ["debug", "dynamic_linking"] }
 bevy_replicon = "0.39.5"
 bevy_replicon_renet = "0.15.0"
 rand = "0.10.1"

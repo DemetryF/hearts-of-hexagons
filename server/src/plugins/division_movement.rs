@@ -1,7 +1,6 @@
 use {
     crate::{
-        Players,
-        map::Map,
+        Map, Players,
         plugins::{
             tick::{PostTick, Tick},
             trigger_attack,
@@ -84,7 +83,7 @@ fn calculate_path(
     let mut g_score = HashMap::new();
     let mut parent = HashMap::new();
 
-    queue.push(Reverse(QueueElement(0 + pos.manhattan_dist(order.to), pos)));
+    queue.push(Reverse(QueueElement(pos.manhattan_dist(order.to), pos)));
 
     g_score.insert(pos, 0);
 
@@ -155,7 +154,7 @@ pub fn process_moving(
         path.progress += division.speed;
 
         if path.progress >= PROV_DISTANCE {
-            path.progress = path.progress - PROV_DISTANCE;
+            path.progress -= PROV_DISTANCE;
 
             let from = pos.0;
             let to = path.provs.pop().unwrap();

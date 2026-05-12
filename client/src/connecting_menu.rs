@@ -1,12 +1,14 @@
-use bevy::{input_focus::InputFocus, prelude::*};
-use bevy_replicon::shared::backend::{ClientState, channels::RepliconChannels};
-use bevy_replicon_renet::{
-    RenetChannelsExt, RenetClient,
-    netcode::{ClientAuthentication, NetcodeClientTransport},
-    renet::ConnectionConfig,
+use {
+    bevy::{input_focus::InputFocus, prelude::*},
+    bevy_replicon::shared::backend::{ClientState, channels::RepliconChannels},
+    bevy_replicon_renet::{
+        RenetChannelsExt, RenetClient,
+        netcode::{ClientAuthentication, NetcodeClientTransport},
+        renet::ConnectionConfig,
+    },
+    bevy_simple_text_input::{TextInput, TextInputValue},
+    std::{net::UdpSocket, time::SystemTime},
 };
-use bevy_simple_text_input::{TextInput, TextInputValue};
-use std::{net::UdpSocket, time::SystemTime};
 
 const BACKGROUND_COLOR: Color = Color::linear_rgba(0.3, 0.3, 0.3, 0.4);
 
@@ -83,12 +85,12 @@ fn init_ui(mut commands: Commands) {
 
 fn connect_button_background_color(
     mut input_focus: ResMut<InputFocus>,
-    query: Query<
+    buttons: Query<
         (Entity, &Interaction, &mut BackgroundColor, &mut Button),
         (Changed<Interaction>, With<UiConnect>),
     >,
 ) {
-    for (id, &interaction, mut color, mut button) in query {
+    for (id, &interaction, mut color, mut button) in buttons {
         match interaction {
             Interaction::Pressed => {
                 input_focus.set(id);

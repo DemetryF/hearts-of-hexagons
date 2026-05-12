@@ -1,6 +1,4 @@
-use crate::map::Map;
-use bevy::prelude::*;
-use shared::*;
+use {crate::Map, bevy::prelude::*, shared::*};
 
 pub struct ProvincePlugin;
 

@@ -1,15 +1,16 @@
-mod map;
 mod plugins;
 
-use crate::{map::Map, plugins::GamePlugins};
-use bevy::{prelude::*, state::app::StatesPlugin};
-use bevy_replicon::prelude::*;
-use bevy_replicon_renet::{
-    RenetChannelsExt, RenetServer, RepliconRenetPlugins, netcode::*, renet::ConnectionConfig,
+use {
+    crate::plugins::GamePlugins,
+    bevy::{prelude::*, state::app::StatesPlugin},
+    bevy_replicon::prelude::*,
+    bevy_replicon_renet::{
+        RenetChannelsExt, RenetServer, RepliconRenetPlugins, netcode::*, renet::ConnectionConfig,
+    },
+    serde::Deserialize,
+    shared::*,
+    std::{collections::HashMap, fs, net::UdpSocket, time::SystemTime},
 };
-use serde::Deserialize;
-use shared::*;
-use std::{collections::HashMap, fs, net::UdpSocket, time::SystemTime};
 
 const PORT: u16 = 5000;
 
@@ -122,6 +123,11 @@ fn spawn_divisions(mut commands: Commands, countries: Query<(&Country, Entity)>)
     ));
 
     println!("spawned 3 divisions")
+}
+
+#[derive(Resource, Default)]
+pub struct Map {
+    pub provs: HashMap<HexagonPos, Entity>,
 }
 
 fn init_map_n_countries(mut commands: Commands, mut map: ResMut<Map>) {
