@@ -1,12 +1,16 @@
-use {crate::PlayingCountry, bevy::prelude::*, shared::*};
+use {
+    bevy::{input::keyboard::Key, prelude::*},
+    shared::*,
+};
 
 pub struct DivisionSelectionPlugin;
 
 impl Plugin for DivisionSelectionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (select_division, cancel_selection))
-            .add_observer(selection_mesh)
-            .add_observer(undraw_selection);
+        app.add_systems(Update, cancel_selection)
+            .add_observer(add_selection_mesh)
+            .add_observer(remove_selection_mesh)
+            .add_observer(select_division);
     }
 }
 
@@ -14,46 +18,43 @@ impl Plugin for DivisionSelectionPlugin {
 pub struct SelectedDivision;
 
 fn select_division(
-    selected: Option<Single<Entity, With<SelectedDivision>>>,
-    divisions: Query<(Entity, &GlobalTransform, &DivisionOwner), With<Division>>,
-    camera: Single<(&Camera, &GlobalTransform)>,
-    window: Single<&Window>,
-    playing_country: Res<PlayingCountry>,
-    mouse: Res<ButtonInput<MouseButton>>,
+    event: On<Pointer<Click>>,
+    selected: Query<Entity, With<SelectedDivision>>,
+    divisions: Query<Entity, With<Division>>,
+    keys: Res<ButtonInput<Key>>,
     mut commands: Commands,
 ) {
-    if !mouse.just_pressed(MouseButton::Left) {
+    let clicked = event.entity;
+
+    if !divisions.contains(clicked) {
         return;
     }
 
-    let (camera, camera_transform) = camera.into_inner();
-
-    let Some(cursor) = window
-        .cursor_position()
-        .and_then(|c| camera.viewport_to_world_2d(camera_transform, c).ok())
-    else {
-        return;
-    };
-
-    let Some((id, _, _)) = divisions.iter().find(|(_, transform, owner)| {
-        let rect = Rect::from_center_size(transform.translation().xy(), Vec2::new(4., 2.5));
-
-        rect.contains(cursor) && owner.0 == playing_country.0.unwrap()
-    }) else {
-        return;
-    };
-
-    if let Some(selected) = selected.map(|s| s.into_inner()) {
-        commands.entity(selected).remove::<SelectedDivision>();
+    if !keys.pressed(Key::Shift) {
+        for entity in selected {
+            commands.entity(entity).remove::<SelectedDivision>();
+        }
     }
 
-    commands.entity(id).insert(SelectedDivision);
+    commands.entity(clicked).insert(SelectedDivision);
+}
+
+fn cancel_selection(
+    mut commands: Commands,
+    selected: Option<Single<Entity, With<SelectedDivision>>>,
+    keys: Res<ButtonInput<KeyCode>>,
+) {
+    if let Some(selected) = selected
+        && keys.just_pressed(KeyCode::Escape)
+    {
+        commands.entity(*selected).remove::<SelectedDivision>();
+    }
 }
 
 #[derive(Component)]
 pub struct SelectionMesh;
 
-fn selection_mesh(
+fn add_selection_mesh(
     trigger: On<Insert, SelectedDivision>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -67,19 +68,7 @@ fn selection_mesh(
     ));
 }
 
-fn cancel_selection(
-    mut commands: Commands,
-    selected: Option<Single<Entity, With<SelectedDivision>>>,
-    input: Res<ButtonInput<KeyCode>>,
-) {
-    if let Some(selected) = selected
-        && input.just_pressed(KeyCode::Escape)
-    {
-        commands.entity(*selected).remove::<SelectedDivision>();
-    }
-}
-
-fn undraw_selection(
+fn remove_selection_mesh(
     trigger: On<Remove, SelectedDivision>,
     children: Query<&Children>,
     selection_meshes: Query<(), With<SelectionMesh>>,

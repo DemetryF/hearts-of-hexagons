@@ -22,8 +22,6 @@ fn init_division_mesh(
     let mesh = meshes.add(Rectangle::new(4., 2.5));
 
     for (id, &DivisionPos(pos)) in divisions {
-        println!("inited division mesh");
-
         let divisions_at_the_prov = (divisions_at_prov.0).get(&pos).copied().unwrap_or_default();
 
         let shift = Vec2::new(0., 3. * divisions_at_the_prov as f32);
@@ -36,6 +34,7 @@ fn init_division_mesh(
             Mesh2d(mesh.clone()),
             MeshMaterial2d(materials.add(Color::linear_rgb(0.2, 0.8, 0.2))),
             Transform::from_xyz(pos.x, pos.y, 1.),
+            Pickable::default(),
         ));
     }
 }

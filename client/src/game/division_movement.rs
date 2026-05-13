@@ -1,6 +1,6 @@
 use {
     crate::{
-        common::{HoveredProvince, SIDE},
+        common::SIDE,
         game::{DivisionsAtProvince, SelectedDivision},
     },
     bevy::prelude::*,
@@ -15,30 +15,31 @@ impl Plugin for DivisionMovementPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (
-                create_moving_order,
-                (update_prev_pos, init_prev_pos, update_division_mesh).chain(),
-            ),
-        );
+            (update_prev_pos, init_prev_pos, update_division_mesh).chain(),
+        )
+        .add_observer(create_moving_order);
     }
 }
 
 fn create_moving_order(
-    selected: Option<Single<Entity, With<SelectedDivision>>>,
-    hovered_prov: Res<HoveredProvince>,
-    input: Res<ButtonInput<MouseButton>>,
+    event: On<Pointer<Press>>,
+    selected: Query<Entity, With<SelectedDivision>>,
+    provs: Query<&Province>,
     mut commands: Commands,
 ) {
-    if input.just_pressed(MouseButton::Left)
-        && let Some(hovered) = hovered_prov.0
-        && let Some(selected) = selected
-    {
+    let Ok(dst) = provs.get(event.entity) else {
+        return;
+    };
+
+    for entity in selected {
         commands.client_trigger(MovingOrderEvent {
-            entity: *selected,
-            to: hovered,
+            entity,
+            to: dst.pos,
         });
 
-        commands.entity(*selected).remove::<SelectedDivision>();
+        println!("created moving order");
+
+        commands.entity(entity).remove::<SelectedDivision>();
     }
 }
 

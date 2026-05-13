@@ -1,99 +1,51 @@
-use {
-    crate::common::{Map, SIDE},
-    bevy::prelude::*,
-    shared::*,
-};
+use {bevy::prelude::*, shared::*};
 
 pub struct ProvinceHoveringPlugin;
 
 impl Plugin for ProvinceHoveringPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<HoveredProvince>()
-            .init_resource::<Highlighted>()
-            .add_systems(
-                Update,
-                (
-                    update_hovered,
-                    (unhighlight, update_highlighted)
-                        .chain()
-                        .run_if(resource_changed::<HoveredProvince>),
-                ),
-            );
+        app.add_observer(highlight).add_observer(unhighlight);
     }
 }
 
-#[derive(Resource, Default)]
-pub struct HoveredProvince(pub Option<HexagonPos>);
-
-fn update_hovered(
-    mut hovered: ResMut<HoveredProvince>,
-    window: Single<&Window>,
-    camera: Single<(&Camera, &GlobalTransform)>,
-    map: Res<Map>,
+fn highlight(
+    event: On<Pointer<Over>>,
+    mut provs: Query<(&ProvinceOwner, &mut MeshMaterial2d<ColorMaterial>)>,
+    countries: Query<&Country>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let (camera, camera_transform) = camera.into_inner();
+    let prov = event.entity;
 
-    let Some(cursor_pos) = window
-        .cursor_position()
-        .and_then(|c| camera.viewport_to_world_2d(camera_transform, c).ok())
-    else {
-        hovered.0 = None;
+    let Ok(query) = provs.get_mut(prov) else {
         return;
     };
 
-    let cursor_hpos = HexagonPos::from_real_regular(cursor_pos, SIDE);
-
-    if Some(cursor_hpos) == hovered.0 {
+    let (&ProvinceOwner(Some(owner)), mut material) = query else {
         return;
-    }
+    };
 
-    hovered.0 = map.provs.contains_key(&cursor_hpos).then_some(cursor_hpos);
+    let owner = countries.get(owner).unwrap();
+
+    material.0 = materials.add(owner.color.lighter(0.05));
 }
-
-#[derive(Resource, Default)]
-pub struct Highlighted(Option<Entity>);
 
 fn unhighlight(
+    event: On<Pointer<Out>>,
     mut provs: Query<(&ProvinceOwner, &mut MeshMaterial2d<ColorMaterial>)>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
     countries: Query<&Country>,
-    highlighted: ResMut<Highlighted>,
-) {
-    let Some(prev_id) = highlighted.0 else { return };
-
-    let (owner, mut material) = provs.get_mut(prev_id).unwrap();
-
-    // TODO province can be unclaimed
-    let prov_owner = owner.0.unwrap();
-    let country = countries.get(prov_owner).unwrap();
-    let color = country.color;
-
-    *material = MeshMaterial2d(materials.add(color));
-}
-
-fn update_highlighted(
-    mut provs: Query<(Entity, &Province, &mut MeshMaterial2d<ColorMaterial>)>,
-    owners: Query<&ProvinceOwner>,
-    countries: Query<&Country>,
-    mut highlighted: ResMut<Highlighted>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    hovered: Res<HoveredProvince>,
 ) {
-    let Some(hovered_pos) = hovered.0 else {
-        highlighted.0 = None;
+    let prov = event.entity;
+
+    let Ok(query) = provs.get_mut(prov) else {
         return;
     };
 
-    let hovered_prov = provs
-        .iter_mut()
-        .find(|&(_, prov, _)| prov.pos == hovered_pos);
+    let (&ProvinceOwner(Some(owner)), mut material) = query else {
+        return;
+    };
 
-    if let Some((id, _, mut material)) = hovered_prov {
-        let owner = owners.get(id).unwrap();
-        let country = countries.get(owner.0.unwrap()).unwrap();
+    let owner = countries.get(owner).unwrap();
 
-        material.0 = materials.add(country.color.lighter(0.05));
-
-        highlighted.0 = Some(id);
-    }
+    material.0 = materials.add(owner.color);
 }

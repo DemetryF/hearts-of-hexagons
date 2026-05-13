@@ -1,8 +1,5 @@
 use {
-    crate::{
-        AppState, PlayingCountry,
-        common::{HoveredProvince, Map},
-    },
+    crate::{AppState, PlayingCountry},
     bevy::prelude::*,
     shared::*,
 };
@@ -16,12 +13,11 @@ impl Plugin for UiPlugin {
         (app)
             .add_systems(
                 OnEnter(AppState::Game),
-                (display_country_info, init_hovered_prov_info),
+                (init_country_info, init_hovered_prov_info),
             )
-            .add_systems(
-                Update,
-                (update_country_info, update_hovered_prov_info).run_if(in_state(AppState::Game)),
-            );
+            .add_systems(Update, update_country_info)
+            .add_observer(show_hovered_prov_info)
+            .add_observer(hide_hovered_prov_info);
     }
 }
 
@@ -31,13 +27,7 @@ pub struct UiMoneyLabel;
 #[derive(Component)]
 pub struct UiBuyDivisionButton;
 
-#[derive(Component)]
-pub struct UiProvInfoNode;
-
-#[derive(Component)]
-pub struct UiProvCoords;
-
-fn display_country_info(mut commands: Commands) {
+fn init_country_info(mut commands: Commands) {
     commands.spawn((
         Node {
             width: percent(20),
@@ -93,6 +83,12 @@ fn update_country_info(
     money_label.0 = format!("{}\nmoney: {}", country.name, country.money);
 }
 
+#[derive(Component)]
+pub struct UiProvInfoNode;
+
+#[derive(Component)]
+pub struct UiProvCoords;
+
 fn init_hovered_prov_info(mut commands: Commands) {
     commands.spawn((
         UiProvInfoNode,
@@ -126,23 +122,32 @@ fn init_hovered_prov_info(mut commands: Commands) {
     ));
 }
 
-fn update_hovered_prov_info(
+fn show_hovered_prov_info(
+    event: On<Pointer<Over>>,
     mut coords_label: Single<&mut Text, With<UiProvCoords>>,
     vis: Single<&mut Visibility, With<UiProvInfoNode>>,
-    owners: Query<&ProvinceOwner>,
+    provs: Query<(&Province, &ProvinceOwner)>,
     countries: Query<&Country>,
-    map: Res<Map>,
-    hovered: Res<HoveredProvince>,
 ) {
-    if let Some(hovered) = hovered.0 {
-        *vis.into_inner() = Visibility::Visible;
+    let prov = event.entity;
 
-        let prov = map.provs[&hovered];
-        let owner = owners.get(prov).unwrap();
-        let country = countries.get(owner.0.unwrap()).unwrap();
-
-        coords_label.0 = format!("({}, {})\nowner: {}", hovered.x, hovered.y, country.name);
-    } else {
-        *vis.into_inner() = Visibility::Hidden;
+    let Ok((prov, owner)) = provs.get(prov) else {
+        return;
     };
+
+    *vis.into_inner() = Visibility::Visible;
+
+    let country = countries.get(owner.0.unwrap()).unwrap();
+
+    coords_label.0 = format!("({}, {})\nowner: {}", prov.pos.x, prov.pos.y, country.name);
+}
+
+fn hide_hovered_prov_info(
+    event: On<Pointer<Out>>,
+    vis: Single<&mut Visibility, With<UiProvInfoNode>>,
+    provs: Query<(), With<Province>>,
+) {
+    if provs.get(event.entity).is_ok() {
+        *vis.into_inner() = Visibility::Hidden;
+    }
 }

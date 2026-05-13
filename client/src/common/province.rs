@@ -45,6 +45,7 @@ pub fn setup_provs_meshes(
             Mesh2d(mesh.clone()),
             MeshMaterial2d(materials.add(country.color)),
             Transform::from_xyz(pos.x, pos.y, 0.0).with_rotation(Quat::from_rotation_z(PI / 2.)),
+            Pickable::default(),
         ));
 
         map.provs.insert(prov.pos, id);

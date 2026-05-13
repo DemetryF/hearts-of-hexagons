@@ -30,16 +30,16 @@ impl Plugin for BattlePlugin {
 }
 
 pub fn trigger_attack(
-    moving_divisions: Query<(Entity, &DivisionPos, &Path)>,
-    divisions: Query<(Entity, &DivisionPos)>,
+    moving_divisions: Query<(Entity, &DivisionPos, &DivisionOwner, &Path)>,
+    divisions: Query<(Entity, &DivisionPos, &DivisionOwner)>,
     mut commands: Commands,
 ) {
-    for (id, &DivisionPos(pos), path) in moving_divisions {
+    for (id, &DivisionPos(pos), &DivisionOwner(attacker_owner), path) in moving_divisions {
         let &dst = path.provs.last().unwrap();
 
         let mut divs_at_dst = {
             (divisions.iter())
-                .filter(|(_, pos)| pos.0 == dst)
+                .filter(|(_, pos, owner)| pos.0 == dst && owner.0 != attacker_owner)
                 .peekable()
         };
 
@@ -47,7 +47,7 @@ pub fn trigger_attack(
             commands.entity(id).insert(AttacksOn(dst));
         }
 
-        for (id, _) in divs_at_dst {
+        for (id, _, _) in divs_at_dst {
             commands.entity(id).insert(DefendsFrom(pos));
         }
     }

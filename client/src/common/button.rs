@@ -1,7 +1,4 @@
-use {
-    crate::game::UiBuyDivisionButton,
-    bevy::{input_focus::InputFocus, prelude::*},
-};
+use bevy::{input_focus::InputFocus, prelude::*};
 
 const BUTTON_NORMAL_COLOR: Color = Color::linear_rgb(0.4, 0.4, 0.4);
 const BUTTON_HOVERED_COLOR: Color = Color::linear_rgb(0.43, 0.43, 0.43);
@@ -28,10 +25,7 @@ fn insert_background_color(
 
 fn button_interaction(
     mut input_focus: ResMut<InputFocus>,
-    query: Query<
-        (Entity, &Interaction, &mut BackgroundColor, &mut Button),
-        (Changed<Interaction>, With<UiBuyDivisionButton>),
-    >,
+    query: Query<(Entity, &Interaction, &mut BackgroundColor, &mut Button), Changed<Interaction>>,
 ) {
     for (id, &interaction, mut color, mut button) in query {
         match interaction {
