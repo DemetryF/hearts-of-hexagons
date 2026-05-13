@@ -54,86 +54,87 @@ fn moving_order(
     }
 }
 
+// TODO: replace this system with on_add
 fn calculate_path(
-    division: Option<Single<(Entity, &DivisionPos, &MovingOrder), Changed<MovingOrder>>>,
+    divisions: Query<(Entity, &DivisionPos, &MovingOrder), Changed<MovingOrder>>,
     map: Res<Map>,
     mut commands: Commands,
 ) {
-    let Some((id, &DivisionPos(pos), order)) = division.map(|d| d.into_inner()) else {
-        return;
-    };
+    'outer: for (entity, &DivisionPos(pos), order) in divisions {
+        #[derive(Clone, Copy, PartialEq, Eq)]
+        struct QueueElement(i32, HexagonPos);
 
-    #[derive(Clone, Copy, PartialEq, Eq)]
-    struct QueueElement(i32, HexagonPos);
-
-    impl PartialOrd for QueueElement {
-        fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-            Some(self.cmp(other))
-        }
-    }
-
-    impl Ord for QueueElement {
-        fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-            self.0.cmp(&other.0)
-        }
-    }
-
-    let mut queue = BinaryHeap::new();
-    let mut visited = HashSet::new();
-    let mut g_score = HashMap::new();
-    let mut parent = HashMap::new();
-
-    queue.push(Reverse(QueueElement(pos.manhattan_dist(order.to), pos)));
-
-    g_score.insert(pos, 0);
-
-    while let Some(Reverse(QueueElement(_, current))) = queue.pop() {
-        if current == order.to {
-            break;
-        }
-
-        visited.insert(current);
-
-        for neighbour in current.neighbours() {
-            if !map.provs.contains_key(&neighbour) {
-                continue;
-            }
-
-            let tentative_score = g_score[&current] + 1;
-
-            if g_score
-                .get(&neighbour)
-                .is_none_or(|&score| tentative_score < score)
-            {
-                g_score.insert(neighbour, tentative_score);
-                parent.insert(neighbour, current);
-
-                queue.push(Reverse(QueueElement(
-                    tentative_score + neighbour.manhattan_dist(order.to),
-                    neighbour,
-                )));
+        impl PartialOrd for QueueElement {
+            fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+                Some(self.cmp(other))
             }
         }
 
-        if let Some(mut current) = parent.get(&order.to).copied() {
-            // reversed path
-            let mut provs = vec![order.to];
+        impl Ord for QueueElement {
+            fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+                self.0.cmp(&other.0)
+            }
+        }
 
-            while current != pos {
-                provs.push(current);
-                current = parent[&current];
+        let mut queue = BinaryHeap::new();
+        let mut visited = HashSet::new();
+        let mut g_score = HashMap::new();
+        let mut parent = HashMap::new();
+
+        queue.push(Reverse(QueueElement(pos.manhattan_dist(order.to), pos)));
+
+        g_score.insert(pos, 0);
+
+        while let Some(Reverse(QueueElement(_, current))) = queue.pop() {
+            if current == order.to {
+                break;
             }
 
-            commands.entity(id).insert(Path {
-                provs,
-                progress: 0.,
-            });
+            visited.insert(current);
 
-            return;
+            for neighbour in current.neighbours() {
+                if !map.provs.contains_key(&neighbour) {
+                    continue;
+                }
+
+                let tentative_score = g_score[&current] + 1;
+
+                if g_score
+                    .get(&neighbour)
+                    .is_none_or(|&score| tentative_score < score)
+                {
+                    g_score.insert(neighbour, tentative_score);
+                    parent.insert(neighbour, current);
+
+                    queue.push(Reverse(QueueElement(
+                        tentative_score + neighbour.manhattan_dist(order.to),
+                        neighbour,
+                    )));
+                }
+            }
+
+            if let Some(mut current) = parent.get(&order.to).copied() {
+                // reversed path
+                let mut provs = vec![order.to];
+
+                while current != pos {
+                    provs.push(current);
+                    current = parent[&current];
+                }
+
+                commands.entity(entity).insert(Path {
+                    provs,
+                    progress: 0.,
+                });
+
+                println!("inserted path {entity:?}");
+
+                continue 'outer;
+            }
         }
-    }
 
-    println!("couldnt find path");
+        println!("couldnt find path");
+    }
 }
 
 pub fn process_moving(
@@ -154,6 +155,7 @@ pub fn process_moving(
         path.progress += division.speed;
 
         if path.progress >= PROV_DISTANCE {
+            println!("moved");
             path.progress -= PROV_DISTANCE;
 
             let from = pos.0;

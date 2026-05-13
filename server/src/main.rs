@@ -31,6 +31,7 @@ fn main() {
             (init_server, init_map_n_countries, spawn_divisions).chain(),
         )
         .add_observer(assign_country)
+        .add_observer(unassign_country)
         .run();
 }
 
@@ -228,4 +229,8 @@ fn assign_country(
         mode: SendMode::Direct(req.client_id),
         message,
     });
+}
+
+fn unassign_country(client: On<Despawn, ConnectedClient>, mut players: ResMut<Players>) {
+    players.0.remove(&client.entity);
 }
